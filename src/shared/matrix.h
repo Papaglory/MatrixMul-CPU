@@ -30,7 +30,7 @@ Matrix* matrix_create_from_array(
     int values[num_rows][num_cols]
 );
 
-/*
+/**
  * @brief Create a Matrix from a pointer of pointers (int**).
  *
  * @note The function trusts that the caller gives a 'rows' pointer
@@ -52,7 +52,7 @@ Matrix* matrix_create_from_pointers(
     int** rows
 );
 
-/*
+/**
  * @brief Create a Matrix containing all zeros.
  *
  * @param num_rows The number of rows in the Matrix.
@@ -64,5 +64,13 @@ Matrix* matrix_create_zero(size_t num_rows, size_t num_cols);
 Matrix* matrix_add(void* matrix_1, void* matrix_2);
 
 Matrix* matrix_mult(void* matrix_1, void* matrix_2);
+
+/**
+ * @brief Print the given Matrix for visualization or debugging.
+ *
+ * @param m The matrix to be printed.
+ * @return A value of zero for success, a value of -1 if an error occured.
+*/
+int matrix_print(Matrix* m);
 
 #endif // MATRIX_H
