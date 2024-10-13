@@ -3,13 +3,11 @@
 #include <stdbool.h>
 #include "matrix.h"
 
-Matrix* matrix_create(size_t num_rows, size_t num_cols) {
-
-    // Both dimensions has to be at least greater than 0
-    if (num_rows == 0 || num_cols == 0) { errno = EINVAL; return NULL; }
-
-    return NULL;
-}
+Matrix* matrix_create_from_array(
+    size_t num_rows,
+    size_t num_cols,
+    int arr[num_rows][num_cols]
+);
 
 Matrix* matrix_create_zero(size_t num_rows, size_t num_cols) {
 

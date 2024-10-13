@@ -16,27 +16,27 @@ typedef struct {
 
 } Matrix;
 
-/*
+/**
  * @brief Create a Matrix from a static array given by the user.
  *
- * @param1 The number of rows in the Matrix.
- * @param2 The number of columns in the Matrix.
- * @param3 The array containg the values of the Matrix.
- * @return A Matrix object.
+ * @param num_rows The number of rows in the Matrix.
+ * @param num_cols The number of columns in the Matrix.
+ * @param values The array containg the values of the Matrix.
+ * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
 Matrix* matrix_create_from_array(
     size_t num_rows,
     size_t num_cols,
-    int arr[num_rows][num_cols]
+    int values[num_rows][num_cols]
 );
 
 /*
  * @brief Create a Matrix from a pointer of pointers (int**).
  *
- * @param1 The number of rows in the Matrix.
- * @param2 The number of columns in the Matrix.
- * @param3 A pointer to the allocated array containing the values of the Matrix.
- * @return A Matrix object.
+ * @param num_rows The number of rows in the Matrix.
+ * @param num_cols The number of columns in the Matrix.
+ * @param rows A pointer to the allocated array containing the values of the Matrix.
+ * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
 Matrix* matrix_create_from_pointers(
     size_t num_rows,
@@ -47,9 +47,9 @@ Matrix* matrix_create_from_pointers(
 /*
  * @brief Create a Matrix containing all zeros.
  *
- * @param1 The number of rows in the Matrix.
- * @param2 The number of columns in the Matrix.
- * @return A Matrix object.
+ * @param num_rows The number of rows in the Matrix.
+ * @param num_cols The number of columns in the Matrix.
+ * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
 Matrix* matrix_create_zero(size_t num_rows, size_t num_cols);
 
