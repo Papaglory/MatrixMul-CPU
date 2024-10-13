@@ -7,20 +7,17 @@
  * @brief Given a pointer that represents an array of arrays / 2D array
  * of type (int**), free each row / array and finally free the 'rows' pointer.
  *
+ * @note Does not check for argument errors since free(NULL) is a no-op.
+ *
  * @param num_rows The number of rows in the 2D array.
  * @param rows The pointer pointing to the array of arrays / 2D array.
- * @return A zero to indicate success, and -1 if an error occured.
 */
-int free_rows(size_t num_rows, int** rows) {
-
-    // Check for valid arguments
-    if (num_rows == 0 || !rows) { errno = EINVAL; return -1; }
+void free_rows(size_t num_rows, int** rows) {
 
     for (size_t i = 0; i < num_rows; i++) {
         free(rows[i]);
     }
     free(rows);
-    return 0;
 }
 
 /**
@@ -81,6 +78,32 @@ Matrix* matrix_create_from_array(size_t num_rows, size_t num_cols,
     if (!m) {
         // free allocated rows before returning
         free_rows(num_rows, rows);
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    // Set Matrix member variables
+    m->rows = rows;
+    m->num_rows = num_rows;
+    m->num_cols = num_cols;
+
+    return m;
+}
+
+Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
+                                    int** rows) {
+
+    // Must have non-zero dimensions and valid 'rows' pointer
+    if (num_rows == 0 || num_cols == 0 || !rows) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    // Create the Matrix
+    Matrix* m = (Matrix*)malloc(sizeof(Matrix));
+    if (!m) {
+        // Matrix allocation failed
+        errno = ENOMEM;
         return NULL;
     }
 
@@ -113,6 +136,7 @@ Matrix* matrix_create_zero(size_t num_rows, size_t num_cols) {
     if (!m) {
         // free allocated rows before returning
         free_rows(num_rows, rows);
+        errno = ENOMEM;
         return NULL;
     }
 

@@ -33,9 +33,17 @@ Matrix* matrix_create_from_array(
 /*
  * @brief Create a Matrix from a pointer of pointers (int**).
  *
+ * @note The function trusts that the caller gives a 'rows' pointer
+ * that points to a valid 2D array with the specified dimensions,
+ * to prevent deep validation and unnecessary overhead.
+ *
+ * Furthermore, this function does not take ownership of 'rows'. The caller
+ * is responsible for freeing the memory allocated for rows.
+ *
  * @param num_rows The number of rows in the Matrix.
  * @param num_cols The number of columns in the Matrix.
- * @param rows A pointer to the allocated array containing the values of the Matrix.
+ * @param rows A pointer to the allocated array containing the
+ * values of the Matrix.
  * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
 Matrix* matrix_create_from_pointers(
