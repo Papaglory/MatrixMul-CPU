@@ -150,20 +150,6 @@ Matrix* matrix_create_zero(size_t num_rows, size_t num_cols) {
     return m;
 }
 
-
-
-/**
- * @details
- * To increase performance, we will not use printf() as this will
- * potentially increase the number of syscalls and overhead.
- * A buffer holds all the characters used to represent the Matrix.
- * With each element being an integer, an element can take on a value
- * between 2,147,483,647 and -2,147,483,647. To represent
- * this range in characters we need 11 bytes per element (one for space).
- * We add the number of rows for the new line characters.
- * This buffer will be flushed once using a read() syscall through
- * invoking sprintf().
-*/
 int matrix_print(Matrix* m) {
 
     if (!m || !m->rows) { errno = EINVAL; return -1; }
@@ -173,6 +159,7 @@ int matrix_print(Matrix* m) {
     char* buffer = (char*)malloc(buffer_size);
     if (!buffer) { errno = ENOMEM; return -1; }
 
+    // Set the buffer to the empty string
     buffer[0] = '\0';
 
     // Add Matrix elements to the buffer

@@ -4,14 +4,16 @@
 #include <stddef.h>
 
 typedef struct {
-    /*
+    /**
      * A pointer pointing to a pointer that points to an integer.
      * The idea of an array on the heap is handled through the
      * use of pointers.
     */
     int** rows;
 
+    // The number of rows in the Matrix
     size_t num_rows;
+    // The number of columns in the Matrix
     size_t num_cols;
 
 } Matrix;
@@ -91,6 +93,17 @@ Matrix* matrix_vanilla_mult(void* m1, void* m2);
 
 /**
  * @brief Print the given Matrix for visualization or debugging.
+ *
+ * @details
+ * To increase performance, we will not use printf() as this will
+ * potentially increase the number of syscalls and overhead.
+ * A buffer holds all the characters used to represent the Matrix.
+ * With each element being an integer, an element can take on a value
+ * between 2,147,483,647 and -2,147,483,647. To represent
+ * this range in characters we need 11 bytes per element (one for space).
+ * We add the number of rows for the new line characters.
+ * This buffer will be flushed once using a read() syscall through
+ * invoking sprintf().
  *
  * @param m The matrix to be printed.
  * @return A value of zero for success, a value of -1 if an error occured.
