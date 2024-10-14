@@ -88,6 +88,7 @@ Matrix* matrix_create_from_array(size_t num_rows, size_t num_cols,
     m->rows = rows;
     m->num_rows = num_rows;
     m->num_cols = num_cols;
+    m->owns_rows = true;
 
     return m;
 }
@@ -113,6 +114,7 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
     m->rows = rows;
     m->num_rows = num_rows;
     m->num_cols = num_cols;
+    m->owns_rows = false;
 
     return m;
 }
@@ -146,6 +148,7 @@ Matrix* matrix_create_zero(size_t num_rows, size_t num_cols) {
     m->rows = rows;
     m->num_rows = num_rows;
     m->num_cols = num_cols;
+    m->owns_rows = true;
 
     return m;
 }
@@ -180,5 +183,20 @@ int matrix_print(Matrix* m) {
     printf("%s", buffer);
 
     free(buffer);
+    return 0;
+}
+
+int matrix_free(Matrix* m) {
+
+    if (!m) { errno = EINVAL; return -1; }
+
+    if (m->owns_rows) {
+        for (size_t row = 0; row < m->num_rows; row++) {
+            free(m->rows[row]);
+        }
+    }
+    free(m->rows);
+    free(m);
+
     return 0;
 }

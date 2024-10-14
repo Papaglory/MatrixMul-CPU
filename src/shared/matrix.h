@@ -15,6 +15,8 @@ typedef struct {
     size_t num_rows;
     // The number of columns in the Matrix
     size_t num_cols;
+    // true if the Matrix owns the rows and should free them
+    bool owns_rows;
 
 } Matrix;
 
