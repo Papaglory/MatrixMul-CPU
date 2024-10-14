@@ -110,4 +110,12 @@ Matrix* matrix_vanilla_mult(void* m1, void* m2);
 */
 int matrix_print(Matrix* m);
 
+/**
+ * @brief Free the allocated Matrix from the heap.
+ *
+ * @param m1 Pointer to the Matrix.
+ * @return A value of zero for success and zero if an error occured.
+*/
+int matrix_free(Matrix* m);
+
 #endif // MATRIX_H
