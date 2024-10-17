@@ -28,6 +28,6 @@ Matrix* matrix_singlethread_add(void* m1, void* m2);
  * @return A pointer to a newly alloced Matrix which contains the result
  * of the multiplication. Returns NULL if an error occured.
 */
-Matrix* matrix_singlethread_mult(void* m1, void* m2);
+Matrix* matrix_singlethread_mult(Matrix* m1, Matrix* m2);
 
 #endif //MATRIX_SINGLETHREAD_H
