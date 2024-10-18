@@ -18,9 +18,6 @@ rm $OUTPUT_FILE
 # Manually make the test file
 gcc -c $TEST_FILE -o build/$(basename $TEST_FILE .c).o
 
-# Remove the main.o file to only have one main()
-rm build/main.o
-
 # Create a binary file consisting of the test file
 gcc -g $(find ./build -name "*.o") -o $OUTPUT_FILE
 chmod +x $OUTPUT_FILE

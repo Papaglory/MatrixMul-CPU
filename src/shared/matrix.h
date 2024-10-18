@@ -10,7 +10,7 @@ typedef struct {
      * The idea of an array on the heap is handled through the
      * use of pointers.
     */
-    int** rows;
+    int* values;
 
     // The number of rows in the Matrix
     size_t num_rows;
@@ -22,14 +22,40 @@ typedef struct {
 } Matrix;
 
 /**
- * @brief Create a Matrix from a static array given by the user.
+ * @brief Create a Matrix from a static 1D array given by the user.
+ *
+ * @note The implementation is identical to the function
+ * matrix_create_from_2D_array(), except for the array insertion logic.
+ * These two functions are purposefully kept in separate functions for
+ * API clearity and slightly optimized code at the cost of slightly
+ * higher binary file size.
  *
  * @param num_rows The number of rows in the Matrix.
  * @param num_cols The number of columns in the Matrix.
- * @param values The array containg the values of the Matrix.
+ * @param values The array containg the values to insert into the Matrix.
  * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
-Matrix* matrix_create_from_array(
+Matrix* matrix_create_from_1D_array(
+    size_t num_rows,
+    size_t num_cols,
+    int values[num_rows * num_cols]
+);
+
+/**
+ * @brief Create a Matrix from a static 2D array given by the user.
+ *
+ * @note The implementation is identical to the function
+ * matrix_create_from_1D_array(), except for the array insertion logic.
+ * These two functions are purposefully kept in separate functions for
+ * API clearity and slightly optimized code at the cost of slightly
+ * higher binary file size.
+ *
+ * @param num_rows The number of rows in the Matrix.
+ * @param num_cols The number of columns in the Matrix.
+ * @param values The array containg the values to insert into the Matrix.
+ * @return A pointer to the created Matrix object, or NULL if an error occured.
+*/
+Matrix* matrix_create_from_2D_array(
     size_t num_rows,
     size_t num_cols,
     int values[num_rows][num_cols]
@@ -54,7 +80,7 @@ Matrix* matrix_create_from_array(
 Matrix* matrix_create_from_pointers(
     size_t num_rows,
     size_t num_cols,
-    int** rows
+    int* row
 );
 
 /**
