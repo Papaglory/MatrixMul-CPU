@@ -84,13 +84,16 @@ Matrix* matrix_create_from_pointers(
 );
 
 /**
- * @brief Create a Matrix containing all zeros.
+ * @brief Create a Matrix given the pattern in the function argument.
+ * Available patterns: pattern_zero, pattern_random_between.
  *
+ * @param pattern A function pointer to the pattern to be used during
+ * Matrix generation.
  * @param num_rows The number of rows in the Matrix.
  * @param num_cols The number of columns in the Matrix.
  * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
-Matrix* matrix_create_zero(size_t num_rows, size_t num_cols);
+Matrix* matrix_generate_with(int (*pattern)(), size_t num_rows, size_t num_cols);
 
 /**
  * @brief Print the given Matrix for visualization or debugging.

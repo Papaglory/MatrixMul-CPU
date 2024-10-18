@@ -116,15 +116,37 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
     return m;
 }
 
-Matrix* matrix_create_zero(size_t num_rows, size_t num_cols) {
+/**
+ * @brief A pattern used by matrix_generate_with() to
+ * retrieve the integer 0.
+ *
+ *@return Return the integer 0.
+ */
+static int pattern_zero() { return 0; }
 
-    if (num_rows == 0 || num_cols == 0) {
+/**
+ * @brief A pattern used by matrix_generate_with() to
+ * retrieve an integer between min and max (inclusive).
+ *
+ * @param min The lower bound (inclusive).
+ * @param max The upper bound (inclusive).
+ *
+ *@return Return a value between min and max (inclusive).
+ */
+static int pattern_random_between(int min, int max) {
+
+    return rand() % (max - min + 1) + min;
+}
+
+Matrix* matrix_generate_with(int (*pattern)(), size_t num_rows, size_t num_cols) {
+
+    if (num_rows == 0 || num_cols == 0 || !pattern) {
         errno = EINVAL;
-        perror("Both dimensions have to be greater than 0");
+        perror("Error: Invalid argument for matrix_generate_with()");
         return NULL;
     }
 
-    // Allocate a 2D array with size determined by 'num_rows', 'num_cols'
+    // Allocate a 1D array with size determined by 'num_rows', 'num_cols'
     int* values = (int*)calloc(num_rows * num_cols, sizeof(int));
     if (!values) {
         errno = EINVAL;
@@ -132,10 +154,10 @@ Matrix* matrix_create_zero(size_t num_rows, size_t num_cols) {
         return NULL;
     }
 
-    // Initialize row values to zeros
+    // Initialize row values given the pattern
     for (size_t i = 0; i < num_rows; i++) {
         for (size_t j = 0; j < num_cols; j++) {
-            values[i * num_rows + j] = 0;
+            values[i * num_cols + j] = pattern();
         }
     }
 
