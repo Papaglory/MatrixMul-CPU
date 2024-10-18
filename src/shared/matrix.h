@@ -1,3 +1,18 @@
+
+
+/**
+ *
+ * TODO FIX THIS:
+ *
+ * We use int* instead of int**, that is, internally for the Matrix
+ * we have a 1D array and not a 2D array due to optimization.
+ * - Contiguous memory instead of fragmented.
+ *   This boosts spatial locality and cache optimization.
+ *   Also reduces overhead of having a 2D array using pointers.
+ *
+ */
+
+
 #ifndef MATRIX_H
 #define MATRIX_H
 
@@ -6,9 +21,7 @@
 
 typedef struct {
     /**
-     * A pointer pointing to a pointer that points to an integer.
-     * The idea of an array on the heap is handled through the
-     * use of pointers.
+     * A pointer pointing to the integer values on the heap.
     */
     int* values;
 
@@ -22,7 +35,7 @@ typedef struct {
 } Matrix;
 
 /**
- * @brief Create a Matrix from a static 1D array given by the user.
+ * @brief Create a Matrix from a static 1D array.
  *
  * @note The implementation is identical to the function
  * matrix_create_from_2D_array(), except for the array insertion logic.
@@ -42,7 +55,7 @@ Matrix* matrix_create_from_1D_array(
 );
 
 /**
- * @brief Create a Matrix from a static 2D array given by the user.
+ * @brief Create a Matrix from a static 2D array.
  *
  * @note The implementation is identical to the function
  * matrix_create_from_1D_array(), except for the array insertion logic.
@@ -62,25 +75,25 @@ Matrix* matrix_create_from_2D_array(
 );
 
 /**
- * @brief Create a Matrix from a pointer of pointers (int**).
+ * @brief Create a Matrix from a pointer pointing to an array on the heap.
  *
- * @note The function trusts that the caller gives a 'rows' pointer
- * that points to a valid 2D array with the specified dimensions,
+ * @note This function trusts that the caller gives a values pointer
+ * that points to a valid 1D array with the specified dimensions
  * to prevent deep validation and unnecessary overhead.
  *
- * Furthermore, this function does not take ownership of 'rows'. The caller
- * is responsible for freeing the memory allocated for rows.
+ * Furthermore, this function does not take ownership of values. The caller
+ * is responsible for freeing the memory allocated for values.
  *
  * @param num_rows The number of rows in the Matrix.
  * @param num_cols The number of columns in the Matrix.
- * @param rows A pointer to the allocated array containing the
- * values of the Matrix.
+ * @param values A pointer to the allocated array containing the
+ * elements of the Matrix.
  * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
 Matrix* matrix_create_from_pointers(
     size_t num_rows,
     size_t num_cols,
-    int* row
+    int* values
 );
 
 /**
@@ -109,7 +122,7 @@ Matrix* matrix_generate_with(int (*pattern)(), size_t num_rows, size_t num_cols)
  * This buffer will be flushed once using a read() syscall through
  * invoking sprintf().
  *
- * @param m The matrix to be printed.
+ * @param m The Matrix to be printed.
  * @return A value of zero for success, a value of -1 if an error occured.
 */
 int matrix_print(Matrix* m);

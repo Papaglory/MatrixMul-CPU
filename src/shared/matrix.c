@@ -14,7 +14,7 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
         return NULL;
     }
 
-    // Allocate a 1D array with size determined by 'num_rows', 'num_cols'
+    // Allocate a 1D array with size determined by num_rows and num_cols
     int* values = (int*)malloc(sizeof(int) * num_rows * num_cols);
     if (!values) {
         errno = ENOMEM;
@@ -22,7 +22,7 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
         return NULL;
     }
 
-    // Initialize row values according to user-array
+    // Initialize row values according to input-array
     for (int i = 0; i < num_rows * num_cols; i++) {
         values[i] = arr_values[i];
     }
@@ -30,7 +30,7 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
     // Create the Matrix
     Matrix* m = (Matrix*)malloc(sizeof(Matrix));
     if (!m) {
-        // free allocated matrix array values before returning
+        // free allocated matrix array elements before returning
         free(values);
         errno = ENOMEM;
         perror("Error: Allocation of the Matrix failed");
@@ -55,7 +55,7 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
         return NULL;
     }
 
-    // Allocate a 1D array with size determined by 'num_rows', 'num_cols'
+    // Allocate a 1D array with size determined by num_rows and num_cols
     int* values = (int*)malloc(sizeof(int) * num_rows * num_cols);
     if (!values) {
         errno = ENOMEM;
@@ -63,7 +63,7 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
         return NULL;
     }
 
-    // Initialize row values according to user-array
+    // Initialize row values according to input-array
     for (size_t i = 0; i < num_rows; i++) {
         for (size_t j = 0; j < num_cols; j++) {
             values[i * num_cols + j] = arr_values[i][j];
@@ -73,7 +73,7 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
     // Create the Matrix
     Matrix* m = (Matrix*)malloc(sizeof(Matrix));
     if (!m) {
-        // free allocated matrix array values before returning
+        // free allocated matrix array elements before returning
         free(values);
         errno = ENOMEM;
         perror("Error: Allocation of the Matrix failed");
@@ -118,9 +118,9 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
 
 /**
  * @brief A pattern used by matrix_generate_with() to
- * retrieve the integer 0.
+ * retrieve the integer zero.
  *
- *@return Return the integer 0.
+ *@return Return the integer zero.
  */
 static int pattern_zero() { return 0; }
 
@@ -146,7 +146,7 @@ Matrix* matrix_generate_with(int (*pattern)(), size_t num_rows, size_t num_cols)
         return NULL;
     }
 
-    // Allocate a 1D array with size determined by 'num_rows', 'num_cols'
+    // Allocate a 1D array with size determined by num_rows and num_cols
     int* values = (int*)calloc(num_rows * num_cols, sizeof(int));
     if (!values) {
         errno = EINVAL;
@@ -154,7 +154,7 @@ Matrix* matrix_generate_with(int (*pattern)(), size_t num_rows, size_t num_cols)
         return NULL;
     }
 
-    // Initialize row values given the pattern
+    // Initialize row elements given the pattern
     for (size_t i = 0; i < num_rows; i++) {
         for (size_t j = 0; j < num_cols; j++) {
             values[i * num_cols + j] = pattern();
