@@ -17,16 +17,22 @@ int min(int a, int b) {
 int* mult(int* restrict A, int* restrict B, size_t n, size_t m, size_t p, size_t block_size) {
     if (!A || !B) {
         // Parameters missing
+        errno = EINVAL;
+        perror("Error: Missing either Matrix A or Matrix B");
         return NULL;
     }
 
     if (n == 0 || m == 0 || p == 0) {
         // Invalid Matrix dimensions
+        errno = EINVAL;
+        perror("Error: At least one of the dimensions (n, m or p) are 0");
         return NULL;
     }
 
     if (block_size == 0 || block_size > n || block_size > m || block_size > p) {
         // Invalid block size
+        errno = EINVAL;
+        perror("Error: An invalid block size has been chosen");
         return NULL;
     }
 
@@ -34,6 +40,8 @@ int* mult(int* restrict A, int* restrict B, size_t n, size_t m, size_t p, size_t
     int* restrict C = (int*)calloc(n * p, sizeof(int));
     if (!C) {
         // Memory allocation failed
+        errno = ENOMEM;
+        perror("Error: Allocating Matrix C failed");
         return NULL;
     }
 
@@ -79,7 +87,3 @@ int* mult(int* restrict A, int* restrict B, size_t n, size_t m, size_t p, size_t
   // Return the result
   return C;
 }
-
-
-
-

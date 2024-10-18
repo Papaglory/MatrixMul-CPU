@@ -35,7 +35,11 @@ int** allocate_rows(size_t num_rows, size_t num_cols) {
 
     // Allocate memory for the row pointers
     int** rows = (int**)malloc(num_rows * sizeof(int*));
-    if (!rows) { errno = ENOMEM; return NULL; }
+    if (!rows) {
+        errno = ENOMEM;
+        perror("Error: Failed to allocate rows");
+        return NULL;
+    }
 
     // Allocate each row in rows
     size_t i = 0;
@@ -44,6 +48,7 @@ int** allocate_rows(size_t num_rows, size_t num_cols) {
         if (!rows[i]) {
             // Memory allocation failed
             errno = ENOMEM;
+            perror("Error: Failed to allocate row in rows");
             break;
         }
     }
@@ -61,8 +66,11 @@ int** allocate_rows(size_t num_rows, size_t num_cols) {
 Matrix* matrix_create_from_array(size_t num_rows, size_t num_cols,
                                 int values[num_rows][num_cols]) {
 
-    // Both dimensions has to be at greater than 0
-    if (num_rows == 0 || num_cols == 0) { errno = EINVAL; return NULL; }
+    if (num_rows == 0 || num_cols == 0) {
+        errno = EINVAL;
+        perror("Error: Both dimensions have to be greater than 0");
+        return NULL;
+    }
 
     // Allocate a 2D array with size determined by 'num_rows', 'num_cols'
     int** rows = allocate_rows(num_rows, num_cols);
@@ -96,9 +104,9 @@ Matrix* matrix_create_from_array(size_t num_rows, size_t num_cols,
 Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
                                     int** rows) {
 
-    // Must have non-zero dimensions and valid 'rows' pointer
     if (num_rows == 0 || num_cols == 0 || !rows) {
         errno = EINVAL;
+        perror("Error: Either non-zero dimensions or invalid 'rows' pointer");
         return NULL;
     }
 
@@ -107,6 +115,7 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
     if (!m) {
         // Matrix allocation failed
         errno = ENOMEM;
+        perror("Error: Failed to allocate Matrix");
         return NULL;
     }
 
@@ -121,8 +130,11 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
 
 Matrix* matrix_create_zero(size_t num_rows, size_t num_cols) {
 
-    // Both dimensions has to be at greater than 0
-    if (num_rows == 0 || num_cols == 0) { errno = EINVAL; return NULL; }
+    if (num_rows == 0 || num_cols == 0) {
+        errno = EINVAL;
+        perror("Both dimensions have to be greater than 0");
+        return NULL;
+    }
 
     // Allocate a 2D array with size determined by 'num_rows', 'num_cols'
     int** rows = allocate_rows(num_rows, num_cols);
@@ -160,7 +172,11 @@ int matrix_print(Matrix* m) {
     // Allocate the buffer on the heap (+1 for the null terminator)
     size_t buffer_size = (m->num_rows * m->num_cols) * 11 + m->num_rows + 1;
     char* buffer = (char*)malloc(buffer_size);
-    if (!buffer) { errno = ENOMEM; return -1; }
+    if (!buffer) {
+        errno = ENOMEM;
+        perror("Error: Failed to allocate print buffer");
+        return -1;
+    }
 
     // Set the buffer to the empty string
     buffer[0] = '\0';
@@ -188,7 +204,11 @@ int matrix_print(Matrix* m) {
 
 int matrix_free(Matrix* m) {
 
-    if (!m) { errno = EINVAL; return -1; }
+    if (!m) {
+        errno = EINVAL;
+        perror("There is no Matrix to free");
+        return -1;
+    }
 
     if (m->owns_rows) {
         for (size_t row = 0; row < m->num_rows; row++) {
