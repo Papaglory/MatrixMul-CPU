@@ -3,7 +3,6 @@
 
 #include "../shared/matrix.h"
 
-
 /**
  * @brief Add the two matrices by adding the elements together.
  * Assumes the matrices have the same dimensions. The result
@@ -29,5 +28,7 @@ Matrix* matrix_singlethread_add(void* m1, void* m2);
  * of the multiplication. Returns NULL if an error occured.
 */
 Matrix* matrix_singlethread_mult(Matrix* m1, Matrix* m2);
+
+Matrix* mult(Matrix* A, Matrix* B, size_t block_size);
 
 #endif //MATRIX_SINGLETHREAD_H

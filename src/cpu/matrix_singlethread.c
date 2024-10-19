@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include "matrix_singlethread.h"
+#include "../shared/matrix.c"
 
 /**
  * @brief Determines the smallest of the two input integer values.
@@ -14,7 +15,13 @@ int min(int a, int b) {
     return (a < b) ? a : b;
 }
 
-int* mult(int* restrict A, int* restrict B, size_t n, size_t m, size_t p, size_t block_size) {
+Matrix* mult(Matrix* A, Matrix* B, size_t block_size) {
+
+    // Extract Matrix dimensions
+    size_t n = A->num_rows;
+    size_t m = A->num_cols;
+    size_t p = B->num_cols;
+
     if (!A || !B) {
         // Parameters missing
         errno = EINVAL;
@@ -36,14 +43,12 @@ int* mult(int* restrict A, int* restrict B, size_t n, size_t m, size_t p, size_t
         return NULL;
     }
 
-    // Allocate memory for the result Matrix C and set values to 0
-    int* restrict C = (int*)calloc(n * p, sizeof(int));
-    if (!C) {
-        // Memory allocation failed
-        errno = ENOMEM;
-        perror("Error: Allocating Matrix C failed");
-        return NULL;
-    }
+    Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
+    if (!C) { return NULL; }
+
+    int* A_arr = A->values;
+    int* B_arr = B->values;
+    int* C_arr = C->values;
 
     // Iterate over blocks of Matrix C
     for (size_t i = 0; i < n; i += block_size) {
@@ -70,13 +75,13 @@ int* mult(int* restrict A, int* restrict B, size_t n, size_t m, size_t p, size_t
                         size_t c_index = ii * p + jj;
                         size_t a_row_offset = ii * m;
                         for (kk = k; kk < k_max - 3; kk += 4) {
-                            C[c_index] += A[a_row_offset + kk] * B[kk * p + jj];
-                            C[c_index] += A[a_row_offset + (kk + 1)] * B[(kk + 1) * p + jj];
-                            C[c_index] += A[a_row_offset + (kk + 2)] * B[(kk + 2) * p + jj];
-                            C[c_index] += A[a_row_offset + (kk + 3)] * B[(kk + 3) * p + jj];
+                            C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
+                            C_arr[c_index] += A_arr[a_row_offset + (kk + 1)] * B_arr[(kk + 1) * p + jj];
+                            C_arr[c_index] += A_arr[a_row_offset + (kk + 2)] * B_arr[(kk + 2) * p + jj];
+                            C_arr[c_index] += A_arr[a_row_offset + (kk + 3)] * B_arr[(kk + 3) * p + jj];
                         }
                         for (; kk < k_max; kk++) {
-                            C[c_index] += A[a_row_offset + kk] * B[kk * p + jj];
+                            C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
                         }
                     }
                 }
