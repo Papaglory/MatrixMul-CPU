@@ -4,8 +4,12 @@
 
 int main() {
 
+    printf("%s\n", "Creating a random Matrix");
+    Matrix* m0 = matrix_create_with(pattern_random_between(10, 20), 3, 2);
+    matrix_print(m0);
+
     printf("%s\n", "Creating a zero Matrix");
-    Matrix* m1 = matrix_create_zero(3, 3);
+    Matrix* m1 = matrix_create_with(pattern_zero, 3, 2);
     matrix_print(m1);
 
     printf("%s\n", "Creating a Matrix from array on the stack");

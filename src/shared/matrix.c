@@ -116,29 +116,44 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
     return m;
 }
 
-/**
- * @brief A pattern used by matrix_create_with() to
- * retrieve the integer zero.
- *
- *@return Return the integer zero.
- */
-static int pattern_zero() { return 0; }
+int* pattern_zero(int* values, void* args, size_t num) {
 
-/**
- * @brief A pattern used by matrix_create_with() to
- * retrieve an integer between min and max (inclusive).
- *
- * @param min The lower bound (inclusive).
- * @param max The upper bound (inclusive).
- *
- *@return Return a value between min and max (inclusive).
- */
-static int pattern_random_between(int min, int max) {
-
-    return rand() % (max - min + 1) + min;
+    if (!values) {
+        errno = EINVAL;
+        perror("Error: Argument pointer is NULL");
+        return NULL;
+    }
+    return memset(values, 0, num * sizeof(int));
 }
 
-Matrix* matrix_create_with(int (*pattern)(), size_t num_rows, size_t num_cols) {
+int* pattern_random_between(int* values, void* args, size_t num) {
+
+    if (!values || !args) {
+        errno = EINVAL;
+        perror("Error: Argument pointer is NULL");
+        return NULL;
+    }
+
+    // Retrieve arguments
+    int* int_args = (int*)args;
+    int min = int_args[0];
+    int max = int_args[1];
+    if (min > max) {
+        errno = EINVAL;
+        perror("Error: min is greater than max");
+        return NULL;
+    }
+
+    // Initialize row elements
+    for (size_t i = 0; i < num; i++) {
+        values[i] = rand() % (max - min + 1) + min;
+        //TODO Consider switching rand for multithread.
+    }
+
+    return values;
+}
+
+Matrix* matrix_create_with(int* (*pattern)(int* values, void* args, size_t num), void* args, size_t num_rows, size_t num_cols) {
 
     if (num_rows == 0 || num_cols == 0 || !pattern) {
         errno = EINVAL;
@@ -154,11 +169,11 @@ Matrix* matrix_create_with(int (*pattern)(), size_t num_rows, size_t num_cols) {
         return NULL;
     }
 
-    // Initialize row elements given the pattern
-    for (size_t i = 0; i < num_rows; i++) {
-        for (size_t j = 0; j < num_cols; j++) {
-            values[i * num_cols + j] = pattern();
-        }
+    // Apply the pattern to the whole array
+    values = pattern(values, args, num_rows * num_cols);
+    if (!values) {
+        // Something went wrong
+        return NULL;
     }
 
     // Create the Matrix
