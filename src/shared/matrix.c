@@ -117,7 +117,7 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
 }
 
 /**
- * @brief A pattern used by matrix_generate_with() to
+ * @brief A pattern used by matrix_create_with() to
  * retrieve the integer zero.
  *
  *@return Return the integer zero.
@@ -125,7 +125,7 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
 static int pattern_zero() { return 0; }
 
 /**
- * @brief A pattern used by matrix_generate_with() to
+ * @brief A pattern used by matrix_create_with() to
  * retrieve an integer between min and max (inclusive).
  *
  * @param min The lower bound (inclusive).
@@ -138,7 +138,7 @@ static int pattern_random_between(int min, int max) {
     return rand() % (max - min + 1) + min;
 }
 
-Matrix* matrix_generate_with(int (*pattern)(), size_t num_rows, size_t num_cols) {
+Matrix* matrix_create_with(int (*pattern)(), size_t num_rows, size_t num_cols) {
 
     if (num_rows == 0 || num_cols == 0 || !pattern) {
         errno = EINVAL;

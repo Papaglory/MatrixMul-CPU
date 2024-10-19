@@ -106,7 +106,7 @@ Matrix* matrix_create_from_pointers(
  * @param num_cols The number of columns in the Matrix.
  * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
-Matrix* matrix_generate_with(int (*pattern)(), size_t num_rows, size_t num_cols);
+Matrix* matrix_create_with(int (*pattern)(), size_t num_rows, size_t num_cols);
 
 /**
  * @brief Print the given Matrix for visualization or debugging.
@@ -131,7 +131,7 @@ int matrix_print(Matrix* m);
  * @brief Free the allocated Matrix from the heap.
  *
  * @param m1 Pointer to the Matrix.
- * @return A value of zero for success and zero if an error occured.
+ * @return A value of zero for success and -1 if an error occured.
 */
 int matrix_free(Matrix* m);
 
