@@ -4,6 +4,8 @@
 
 int main() {
 
+    printf("%s\n\n", "--------STARTING matrix_init_test.c--------");
+
     printf("%s\n", "Creating a zero Matrix");
     Matrix* m1 = matrix_create_with(pattern_zero, NULL, 3, 2);
     matrix_print(m1);

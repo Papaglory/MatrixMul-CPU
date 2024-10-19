@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include "matrix_singlethread.h"
-#include "../shared/matrix.c"
+#include "../shared/matrix.h"
 
 /**
  * @brief Determines the smallest of the two input integer values.
