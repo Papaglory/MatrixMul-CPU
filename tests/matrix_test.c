@@ -5,11 +5,14 @@
 int main() {
 
     printf("%s\n", "Creating a random Matrix");
-    Matrix* m0 = matrix_create_with(pattern_random_between(10, 20), 3, 2);
+    int* rand_args = (int*)malloc(sizeof(int) * 2);
+    rand_args[0] = 10;
+    rand_args[1] = 20;
+    Matrix* m0 = matrix_create_with(pattern_random_between, rand_args, 3, 2);
     matrix_print(m0);
 
     printf("%s\n", "Creating a zero Matrix");
-    Matrix* m1 = matrix_create_with(pattern_zero, 3, 2);
+    Matrix* m1 = matrix_create_with(pattern_zero, NULL, 3, 2);
     matrix_print(m1);
 
     printf("%s\n", "Creating a Matrix from array on the stack");

@@ -1,5 +1,3 @@
-
-
 /**
  *
  * TODO FIX THIS:
@@ -12,7 +10,6 @@
  *
  */
 
-
 #ifndef MATRIX_H
 #define MATRIX_H
 
@@ -22,15 +19,16 @@
 typedef struct {
     /**
      * A pointer pointing to the integer values on the heap.
+     * TODO consider making it immutable.
     */
     int* values;
 
     // The number of rows in the Matrix
-    size_t num_rows;
+    const size_t num_rows;
     // The number of columns in the Matrix
-    size_t num_cols;
+    const size_t num_cols;
     // true if the Matrix owns the rows and should free them
-    bool owns_rows;
+    const bool owns_rows;
 
 } Matrix;
 
@@ -51,7 +49,7 @@ typedef struct {
 Matrix* matrix_create_from_1D_array(
     size_t num_rows,
     size_t num_cols,
-    int values[num_rows * num_cols]
+    const int values[num_rows * num_cols]
 );
 
 /**
@@ -71,7 +69,7 @@ Matrix* matrix_create_from_1D_array(
 Matrix* matrix_create_from_2D_array(
     size_t num_rows,
     size_t num_cols,
-    int values[num_rows][num_cols]
+    const int values[num_rows][num_cols]
 );
 
 /**

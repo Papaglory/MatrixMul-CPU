@@ -6,7 +6,7 @@
 #include "matrix.h"
 
 Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
-                                int arr_values[num_rows * num_cols]) {
+                                const int arr_values[num_rows * num_cols]) {
 
     if (num_rows == 0 || num_cols == 0) {
         errno = EINVAL;
@@ -39,15 +39,15 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
 
     // Set Matrix member variables
     m->values = values;
-    m->num_rows = num_rows;
-    m->num_cols = num_cols;
-    m->owns_rows = true;
+    *((int*)m->num_rows) = num_rows;
+    *((int*)m->num_cols) = num_cols;
+    *((int*)m->owns_rows) = true;
 
     return m;
 }
 
 Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
-                                int arr_values[num_rows][num_cols]) {
+                                const int arr_values[num_rows][num_cols]) {
 
     if (num_rows == 0 || num_cols == 0) {
         errno = EINVAL;
@@ -82,9 +82,9 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
 
     // Set Matrix member variables
     m->values = values;
-    m->num_rows = num_rows;
-    m->num_cols = num_cols;
-    m->owns_rows = true;
+    *((int*)m->num_rows) = num_rows;
+    *((int*)m->num_cols) = num_cols;
+    *((int*)m->owns_rows) = true;
 
     return m;
 }
@@ -109,9 +109,9 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
 
     // Set Matrix member variables
     m->values = values;
-    m->num_rows = num_rows;
-    m->num_cols = num_cols;
-    m->owns_rows = false;
+    *((int*)m->num_rows) = num_rows;
+    *((int*)m->num_cols) = num_cols;
+    *((int*)m->owns_rows) = true;
 
     return m;
 }
@@ -188,9 +188,9 @@ Matrix* matrix_create_with(int* (*pattern)(int* values, void* args, size_t num),
 
     // Set Matrix member variables
     m->values = values;
-    m->num_rows = num_rows;
-    m->num_cols = num_cols;
-    m->owns_rows = true;
+    *((int*)m->num_rows) = num_rows;
+    *((int*)m->num_cols) = num_cols;
+    *((int*)m->owns_rows) = true;
 
     return m;
 }
