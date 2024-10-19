@@ -24,11 +24,11 @@ typedef struct {
     int* values;
 
     // The number of rows in the Matrix
-    const size_t num_rows;
+    size_t num_rows;
     // The number of columns in the Matrix
-    const size_t num_cols;
+    size_t num_cols;
     // true if the Matrix owns the rows and should free them
-    const bool owns_rows;
+    bool owns_rows;
 
 } Matrix;
 

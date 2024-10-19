@@ -39,9 +39,9 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
 
     // Set Matrix member variables
     m->values = values;
-    *((int*)m->num_rows) = num_rows;
-    *((int*)m->num_cols) = num_cols;
-    *((int*)m->owns_rows) = true;
+    m->num_rows = num_rows;
+    m->num_cols = num_cols;
+    m->owns_rows = true;
 
     return m;
 }
@@ -82,9 +82,9 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
 
     // Set Matrix member variables
     m->values = values;
-    *((int*)m->num_rows) = num_rows;
-    *((int*)m->num_cols) = num_cols;
-    *((int*)m->owns_rows) = true;
+    m->num_rows = num_rows;
+    m->num_cols = num_cols;
+    m->owns_rows = true;
 
     return m;
 }
@@ -109,9 +109,9 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
 
     // Set Matrix member variables
     m->values = values;
-    *((int*)m->num_rows) = num_rows;
-    *((int*)m->num_cols) = num_cols;
-    *((int*)m->owns_rows) = true;
+    m->num_rows = num_rows;
+    m->num_cols = num_cols;
+    m->owns_rows = true;
 
     return m;
 }
@@ -188,9 +188,9 @@ Matrix* matrix_create_with(int* (*pattern)(int* values, void* args, size_t num),
 
     // Set Matrix member variables
     m->values = values;
-    *((int*)m->num_rows) = num_rows;
-    *((int*)m->num_cols) = num_cols;
-    *((int*)m->owns_rows) = true;
+    m->num_rows = num_rows;
+    m->num_cols = num_cols;
+    m->owns_rows = true;
 
     return m;
 }
