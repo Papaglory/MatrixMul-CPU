@@ -15,7 +15,7 @@ int min(int a, int b) {
     return (a < b) ? a : b;
 }
 
-Matrix* mult(Matrix* A, Matrix* B, size_t block_size) {
+Matrix* matrix_singlethread_mult(Matrix* A, Matrix* B, size_t block_size) {
 
     if (!A || !B) {
         errno = EINVAL;

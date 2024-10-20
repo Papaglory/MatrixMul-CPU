@@ -27,7 +27,7 @@ int main() {
 
     size_t block_size = 1;
     printf("%s\n", "Calling matrix mult");
-    Matrix* result = mult(m1, m2, block_size);
+    Matrix* result = matrix_singlethread_mult(m1, m2, block_size);
     matrix_print(result);
 
     return 0;
