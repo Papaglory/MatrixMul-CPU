@@ -1,13 +1,25 @@
-/**matrix.h
+/**
+ * @file matrix.h
+ * @brief Matrix
+ * This file defines a Matrix struct in 2D for matrices with elements
+ * of type double.
  *
- * TODO FIX THIS:
+ * @details
+ * The internal structure to represent the Matrix is a 1D array.
+ * A 1D (double*) has been chosen over a 2D (double**) due to
+ * optimization reasons:
+ *  - Contiguous memory layout improves spatial locality. Cache lines
+ *      are more likely to result in cache hits, reducing cache misses.
+ *  - Instead of processing entire rows and columns, we consider smaller
+ *  blocks. These are more likely to fit within the CPU's L1 and L2
+ *  (also L3) caches and stay there throughout the calculation of the
+ *  block. We then have less performance decrease due to fetching
+ *  from memory.
+ *  - Reduces the overhead associated with having a 2D array and
+ *      multiple pointers.
  *
- * We use double* instead of double**, that is, internally for the Matrix
- * we have a 1D array and not a 2D array due to optimization.
- * - Contiguous memory instead of fragmented.
- *   This boosts spatial locality and cache optimization.
- *   Also reduces overhead of having a 2D array using pointers.
- *
+ * The member variables num_rows and num_cols makes it clear how to
+ * interpret the 1D array.
  */
 
 #ifndef MATRIX_H
