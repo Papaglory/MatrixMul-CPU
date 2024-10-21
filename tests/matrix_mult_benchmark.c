@@ -1,6 +1,10 @@
-
-
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#include "../src/shared/matrix.h"
+#include "../src/cpu/matrix_singlethread.h"
+#include "../src/shared/matrix_utils.h"
 
 void benchmark_test() {
 

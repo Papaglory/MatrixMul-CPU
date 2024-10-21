@@ -342,7 +342,9 @@ int matrix_free(Matrix* m) {
         return -1;
     }
 
-    free(m->values);
+    if (m->owns_rows) {
+        free(m->values);
+    }
     free(m);
 
     return 0;

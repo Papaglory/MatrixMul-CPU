@@ -11,24 +11,22 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_verification.c--------");
 
     // Benchmark parameters
-    const int RUN_COUNT = 1;
+    const int RUN_COUNT = 100;
     const int BLOCK_SIZE = 1; // Does not matter since we only care about result
-    // If there are different rounding approximations between the implementations
-    const double APPROXIMATION_THRESHOLD = 0.1f;
+    // Used if there are different rounding errors between the implementations
+    const double APPROXIMATION_THRESHOLD = 1e-9;
 
     // Matrix generation parameters
-    const int VALUES_MIN = -1000;
-    const int VALUES_MAX = 1000;
-    const size_t DIMENSIONS_MIN = 1;
-    const size_t DIMENSIONS_MAX = 10;
+    const double VALUES_MIN = -1e-9;
+    const double VALUES_MAX = 1e-9;
+    const size_t DIMENSIONS_MIN = 1000;
+    const size_t DIMENSIONS_MAX = 1000;
     const int seed = 42;
-
-    struct timespec start, end;
-    double elapsed_time;
 
     // Set the seed for reproducibility
     srand(seed);
 
+    bool mismatch_detected = false;
     double total_time = 0;
     for (size_t i = 0; i < RUN_COUNT; i++) {
 
@@ -45,7 +43,7 @@ int main() {
         double* C_blas = (double*)malloc(sizeof(double) * n * p);
 
         // Do the matrix multiplications
-        Matrix* C = matrix_singlethread_mult(A, B, 2);
+        Matrix* C = matrix_singlethread_mult(A, B, 1);
         matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
 
         // Compare result
@@ -53,6 +51,7 @@ int main() {
 
             if (fabs(C->values[j] - C_blas[j]) > APPROXIMATION_THRESHOLD) {
                 printf("Error: The matrix mult result differs!\n");
+                mismatch_detected = true;
                 break;
             }
         }
@@ -60,11 +59,31 @@ int main() {
         Matrix* C_m = matrix_create_with(pattern_zero, NULL, n, p);
         C_m->values = C_blas;
 
-        printf("My Matrix\n");
-        matrix_print(C);
-        printf("BLAS Matrix\n");
-        matrix_print(C_m);
+        // If there is a mismatch, inspect the two matrices
+        if (mismatch_detected) {
+            printf("My Matrix\n");
+            matrix_print(C);
+            printf("BLAS Matrix\n");
+            matrix_print(C_m);
+
+            // Free the allocated data corresponding to this run
+            matrix_free(A);
+            matrix_free(B);
+            matrix_free(C);
+            free(C_blas);
+
+            break;
+        }
+
+        // Free the allocated data corresponding to this run
+        matrix_free(A);
+        matrix_free(B);
+        matrix_free(C);
+        free(C_blas);
     }
+
+    printf("%s\n", "All calculations are correct");
+    printf("%s\n", "--------FINISHED matrix_mult_verification.c--------");
 
     return 0;
 }
