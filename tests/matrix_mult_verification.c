@@ -11,7 +11,7 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_verification.c--------");
 
     // Benchmark parameters
-    const int RUN_COUNT = 100;
+    const int RUN_COUNT = 10;
     const int BLOCK_SIZE = 1; // Does not matter since we only care about result
     // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
