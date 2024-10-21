@@ -138,19 +138,28 @@ Matrix* matrix_create_with(
     void* args, size_t num_rows, size_t num_cols);
 
 /**
- * TODO FIX FOR DOUBLE
  * @brief Print the given Matrix for visualization or debugging.
  *
  * @details
  * To increase performance, we will not use printf() as this will
  * potentially increase the number of syscalls and overhead.
  * A buffer holds all the characters used to represent the Matrix.
- * With each element being an integer, an element can take on a value
- * between 2,147,483,647 and -2,147,483,647. To represent
- * this range in characters we need 11 bytes per element (one for space).
- * We add the number of rows for the new line characters.
+ * An element is represented using either scientific or "normal"
+ * notation.
  * This buffer will be flushed once using a read() syscall through
  * invoking sprintf().
+ *
+ * Worst-case is when every matrix element uses scientific notation with
+ * an exponent taking up 4 spaces (3 for the value and 1 for the sign).
+ * Required spaces:
+ * 1 for sign
+ * 1 for e
+ * 1 for dot
+ * FLOAT_PRECISION for digits after the dot
+ * 4 for the exponent value
+ * 1 for mantissa before dot
+ * 1 for space after the scientific notation (for separating elements)
+ * TOTAL: 11 spaces (with FLOAT_PRECISION = 2).
  *
  * @param m The Matrix to be printed.
  * @return A value of zero for success, a value of -1 if an error occured.

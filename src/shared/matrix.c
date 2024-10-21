@@ -195,6 +195,17 @@ Matrix* matrix_create_with(double* (*pattern)(double* values, void* args, size_t
     return m;
 }
 
+/**
+ * @brief A helper function to insert a single escape sequence into buffer.
+ *
+ * @param val The escape sequence to be inserted.
+ * @param buffer The buffer to insert the escape sequence into.
+ * @param buffer_index A pointer to represent the address in buffer where
+ * we want to insert the escape sequence.
+ * @param buffer_size The total size in bytes of the buffer.
+ *
+ * @return The buffer_index incremented by a byte (for the escape sequence).
+ */
 char* insert_escape_sequence(char val, char* buffer, char* buffer_index, size_t buffer_size) {
 
     if (!buffer || !buffer_index) {
