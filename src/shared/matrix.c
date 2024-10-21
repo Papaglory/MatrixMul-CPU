@@ -6,7 +6,7 @@
 #include "matrix.h"
 
 Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
-                                const int arr_values[num_rows * num_cols]) {
+                                const double arr_values[num_rows * num_cols]) {
 
     if (num_rows == 0 || num_cols == 0) {
         errno = EINVAL;
@@ -15,7 +15,7 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
     }
 
     // Allocate a 1D array with size determined by num_rows and num_cols
-    int* values = (int*)malloc(sizeof(int) * num_rows * num_cols);
+    double* values = (double*)malloc(sizeof(double) * num_rows * num_cols);
     if (!values) {
         errno = ENOMEM;
         perror("Error: Allocation of Matrix array failed");
@@ -23,7 +23,7 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
     }
 
     // Initialize row values according to input-array
-    for (int i = 0; i < num_rows * num_cols; i++) {
+    for (size_t i = 0; i < num_rows * num_cols; i++) {
         values[i] = arr_values[i];
     }
 
@@ -47,7 +47,7 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
 }
 
 Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
-                                const int arr_values[num_rows][num_cols]) {
+                                const double arr_values[num_rows][num_cols]) {
 
     if (num_rows == 0 || num_cols == 0) {
         errno = EINVAL;
@@ -56,7 +56,7 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
     }
 
     // Allocate a 1D array with size determined by num_rows and num_cols
-    int* values = (int*)malloc(sizeof(int) * num_rows * num_cols);
+    double* values = (double*)malloc(sizeof(double) * num_rows * num_cols);
     if (!values) {
         errno = ENOMEM;
         perror("Error: Allocation of Matrix array failed");
@@ -90,7 +90,7 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
 }
 
 Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
-                                    int* values) {
+                                    double* values) {
 
     if (num_rows == 0 || num_cols == 0 || !values) {
         errno = EINVAL;
@@ -116,17 +116,17 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
     return m;
 }
 
-int* pattern_zero(int* values, void* args, size_t num) {
+double* pattern_zero(double* values, void* args, size_t num) {
 
     if (!values) {
         errno = EINVAL;
         perror("Error: Argument pointer is NULL");
         return NULL;
     }
-    return memset(values, 0, num * sizeof(int));
+    return memset(values, 0, num * sizeof(double));
 }
 
-int* pattern_random_between(int* values, void* args, size_t num) {
+double* pattern_random_between(double* values, void* args, size_t num) {
 
     if (!values || !args) {
         errno = EINVAL;
@@ -153,7 +153,7 @@ int* pattern_random_between(int* values, void* args, size_t num) {
     return values;
 }
 
-Matrix* matrix_create_with(int* (*pattern)(int* values, void* args, size_t num), void* args, size_t num_rows, size_t num_cols) {
+Matrix* matrix_create_with(double* (*pattern)(double* values, void* args, size_t num), void* args, size_t num_rows, size_t num_cols) {
 
     if (num_rows == 0 || num_cols == 0 || !pattern) {
         errno = EINVAL;
@@ -162,7 +162,7 @@ Matrix* matrix_create_with(int* (*pattern)(int* values, void* args, size_t num),
     }
 
     // Allocate a 1D array with size determined by num_rows and num_cols
-    int* values = (int*)calloc(num_rows * num_cols, sizeof(int));
+    double* values = (double*)calloc(num_rows * num_cols, sizeof(double));
     if (!values) {
         errno = EINVAL;
         perror("Error: Allocation failed for Matrix array");

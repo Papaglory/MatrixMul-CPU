@@ -1,8 +1,8 @@
-/**
+/**matrix.h
  *
  * TODO FIX THIS:
  *
- * We use int* instead of int**, that is, internally for the Matrix
+ * We use double* instead of double**, that is, internally for the Matrix
  * we have a 1D array and not a 2D array due to optimization.
  * - Contiguous memory instead of fragmented.
  *   This boosts spatial locality and cache optimization.
@@ -18,10 +18,10 @@
 
 typedef struct {
     /**
-     * A pointer pointing to the integer values on the heap.
+     * A pointer pointing to the double values on the heap.
      * TODO consider making it immutable.
     */
-    int* values;
+    double* values;
 
     // The number of rows in the Matrix
     size_t num_rows;
@@ -49,7 +49,7 @@ typedef struct {
 Matrix* matrix_create_from_1D_array(
     size_t num_rows,
     size_t num_cols,
-    const int values[num_rows * num_cols]
+    const double values[num_rows * num_cols]
 );
 
 /**
@@ -69,7 +69,7 @@ Matrix* matrix_create_from_1D_array(
 Matrix* matrix_create_from_2D_array(
     size_t num_rows,
     size_t num_cols,
-    const int values[num_rows][num_cols]
+    const double values[num_rows][num_cols]
 );
 
 /**
@@ -91,7 +91,7 @@ Matrix* matrix_create_from_2D_array(
 Matrix* matrix_create_from_pointers(
     size_t num_rows,
     size_t num_cols,
-    int* values
+    double* values
 );
 
 /**
@@ -106,7 +106,7 @@ Matrix* matrix_create_from_pointers(
  * @param num The number of zeros to insert.
  * @return Return the pointer to values.
  */
-int* pattern_zero(int* values, void* args, size_t num);
+double* pattern_zero(double* values, void* args, size_t num);
 
 /**
  * @brief A pattern used by matrix_create_with() to
@@ -114,13 +114,13 @@ int* pattern_zero(int* values, void* args, size_t num);
  * between min and max (inclusive) which are variables found
  * in args.
  *
- * @param values The internal array of the Matrix to fill with random integers.
+ * @param values The internal array of the Matrix to fill with random doubles.
  * @param args Pointer containing the additional arguments min
  * and max. Variable min and max are the lower and upper bound (inclusive).
  *
  * @return Return the pointer to values.
  */
-int* pattern_random_between(int* values, void* args, size_t num);
+double* pattern_random_between(double* values, void* args, size_t num);
 
 /**
  * @brief Create a Matrix given the pattern in the function argument.
@@ -134,10 +134,11 @@ int* pattern_random_between(int* values, void* args, size_t num);
  * @return A pointer to the created Matrix object, or NULL if an error occured.
 */
 Matrix* matrix_create_with(
-    int* (*pattern)(int* values, void* args, size_t num),
+    double* (*pattern)(double* values, void* args, size_t num),
     void* args, size_t num_rows, size_t num_cols);
 
 /**
+ * TODO FIX FOR DOUBLE
  * @brief Print the given Matrix for visualization or debugging.
  *
  * @details

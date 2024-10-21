@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cblas.h>
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
 #include "../src/shared/matrix.h"
 #include "../src/cpu/matrix_singlethread.h"
@@ -164,8 +165,22 @@ int main() {
         Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
         Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
 
+        double* A_blas = (double*)malloc(sizeof(double) * n * m);
+        double* B_blas = (double*)malloc(sizeof(double) * m * p);
+        double* C_blas = (double*)malloc(sizeof(double) * n * p);
+
         Matrix* C = matrix_singlethread_mult(A, B, 1);
 
+        matrix_mult_openblas(A_blas, B_blas, C_blas, n, m, p);
+
+        // Compare result
+        for (size_t j = 0; j < n * p; j++) {
+
+            if (C->values[j] != round(C_blas[j])) {
+                printf("Error: The matrix mult result differs!\n");
+                break;
+            }
+        }
     }
 
     return 0;
