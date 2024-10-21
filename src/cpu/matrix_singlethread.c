@@ -49,9 +49,9 @@ Matrix* matrix_singlethread_mult(Matrix* A, Matrix* B, size_t block_size) {
     }
 
     // retrieve internal Matrix arrays
-    int* A_arr = A->values;
-    int* B_arr = B->values;
-    int* C_arr = C->values;
+    double* A_arr = A->values;
+    double* B_arr = B->values;
+    double* C_arr = C->values;
 
     // Iterate over blocks of Matrix C
     for (size_t i = 0; i < n; i += block_size) {

@@ -18,7 +18,7 @@ int main() {
     matrix_print(m0);
 
     printf("%s\n", "Creating a Matrix from array on the stack");
-    int arr[2][3] = {
+    double arr[2][3] = {
         {1,2,3},
         {12,8,4}
     };
@@ -28,7 +28,7 @@ int main() {
     printf("%s\n", "Creating a Matrix from array on the heap");
     size_t num_rows = 2;
     size_t num_cols = 2;
-    int* values = (int*)malloc(sizeof(int) * num_rows * num_cols);
+    double* values = (double*)malloc(sizeof(double) * num_rows * num_cols);
     if (!values) {
         printf("Heap allocation failed!");
     }

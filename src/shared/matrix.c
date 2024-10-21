@@ -195,6 +195,42 @@ Matrix* matrix_create_with(double* (*pattern)(double* values, void* args, size_t
     return m;
 }
 
+char* insert_escape_sequence(char val, char* buffer, char* buffer_index, size_t buffer_size) {
+
+    if (!buffer || !buffer_index) {
+        errno = EINVAL;
+        perror("Error: Invalid arguments for insert_escape_sequence()");
+        return NULL;
+    }
+
+    /*
+     * Check for buffer overflow.
+     * If it is the null terminator, we do not check for
+     * equality as the null terminator is the final byte.
+     */
+    if (val == '\0') {
+        if ((buffer_index - buffer) + 1 > buffer_size) {
+            // Writing into buffer will result in overflow
+            errno = ENOMEM;
+            perror("Error: Buffer overflow prevented. Function returned");
+            return NULL;
+        }
+    } else {
+        if ((buffer_index - buffer) + 1 >= buffer_size) {
+            // Writing into buffer will result in overflow
+            errno = ENOMEM;
+            perror("Error: Buffer overflow prevented. Function returned");
+            return NULL;
+        }
+    }
+
+    // Add the escape sequence
+    int index = buffer_index - buffer;
+    buffer[index] = val;
+    // Move buffer_index forward by the byte for the escape sequence
+    return ++buffer_index;
+}
+
 int matrix_print(Matrix* m) {
 
     if (!m || !m->values) {
@@ -203,8 +239,31 @@ int matrix_print(Matrix* m) {
         return -1;
     }
 
+    // Parameter to determine how many decimal places to show
+    const int FLOAT_PRECISION = 2;
+    // Parameter to have a maximum before turning into scientific notation
+    const int FLOAT_MAX = 100000;
+    // A safety margin to prevent buffer overflow (in case of unpredicted Matrix cases)
+    const double BUFFER_SAFETY_MARGIN = 1.1f;
+
+    /*
+    * Worst-case is that every matrix element uses scientific notation with
+    * an exponent taking up 4 spaces (3 for the value and 1 for the sign).
+    * Required spaces:
+    * 1 for sign
+    * 1 for e
+    * 1 for dot
+    * FLOAT_PRECISION for digits after the dot
+    * 4 for the exponent value
+    * 1 for mantissa
+    * 1 for space after the scientific notation (for separating elements)
+    * TOTAL: 11 spaces (with FLOAT_PRECISION = 2).
+    */
+
     // Allocate the buffer on the heap (+1 for the null terminator)
-    size_t buffer_size = (m->num_rows * m->num_cols) * 11 + m->num_rows + 1;
+    size_t buffer_size = (m->num_rows * m->num_cols) * (9 + FLOAT_PRECISION) + m->num_rows + 1;
+    // Apply the safety margin
+    buffer_size = (size_t) buffer_size * BUFFER_SAFETY_MARGIN;
     char* buffer = (char*)malloc(buffer_size);
     if (!buffer) {
         errno = ENOMEM;
@@ -212,21 +271,60 @@ int matrix_print(Matrix* m) {
         return -1;
     }
 
-    // Set the buffer to the empty string
-    buffer[0] = '\0';
-
     // Add Matrix elements to the buffer
+    char* buffer_index = &buffer[0];
     for (size_t i = 0; i < m->num_rows; i++) {
         for (size_t j = 0; j < m->num_cols; j++) {
 
-            int val = m->values[i * m->num_cols + j];
-            char temp[12]; // +1 for null terminator
-            snprintf(temp, sizeof(temp), "%10d ", val);
-            strncat(buffer, temp, buffer_size - strlen(buffer) - 1);
+            // Retrieve Matrix element
+            double val = m->values[i * m->num_cols + j];
+            // Auxiliary buffer to place element into (+1 for null terminator)
+            char temp[12];
+
+            // Determine whether to use scientific or "normal" notation
+            if (val < -FLOAT_MAX || val  > FLOAT_MAX) {
+                // Scientific notation
+                snprintf(temp, sizeof(temp), "%10.*e ", FLOAT_PRECISION, val);
+            } else {
+                // Normal notation
+                snprintf(temp, sizeof(temp), "%10.*f ", FLOAT_PRECISION, val);
+            }
+
+            /*
+             * Before writing to buffer, we make sure no
+             * buffer overflow occurs. We check the number of
+             * bytes used after write does not exceed the total
+             * bytes in the buffer. Equal is used because we want
+             * space for the final null terminator at the end.
+            */
+            size_t strlen_temp = strlen(temp);
+            if ((buffer_index - buffer) + strlen_temp >= buffer_size) {
+                // Writing into buffer will result in overflow
+                errno = ENOMEM;
+                perror("Error: Buffer overflow prevented. Function returned");
+                free(buffer);
+                return -1;
+            }
+            memcpy(buffer_index, temp, strlen_temp);
+            // Move buffer_index forward by the number of bytes copied from temp
+            buffer_index += strlen_temp;
         }
 
-        // Add a newline at the end of the row
-        strncat(buffer, "\n", buffer_size - strlen(buffer) - 1);
+        // Insert an end-of-line character at the end of the row
+        buffer_index = insert_escape_sequence('\n', buffer, buffer_index, buffer_size);
+        if (!buffer_index) {
+            // Insert escape sequence failed
+            free(buffer);
+            return -1;
+        }
+    }
+
+    // Insert a null terminator at the end of the buffer (string)
+    buffer_index = insert_escape_sequence('\0', buffer, buffer_index, buffer_size);
+    if (!buffer_index) {
+        // Insert escape sequence failed
+        free(buffer);
+        return -1;
     }
 
     // Print the entire buffer at once
