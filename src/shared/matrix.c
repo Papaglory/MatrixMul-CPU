@@ -258,17 +258,6 @@ int matrix_print(Matrix* m) {
     const double BUFFER_SAFETY_MARGIN = 1.1f;
 
     /*
-    * Worst-case is that every matrix element uses scientific notation with
-    * an exponent taking up 4 spaces (3 for the value and 1 for the sign).
-    * Required spaces:
-    * 1 for sign
-    * 1 for e
-    * 1 for dot
-    * FLOAT_PRECISION for digits after the dot
-    * 4 for the exponent value
-    * 1 for mantissa
-    * 1 for space after the scientific notation (for separating elements)
-    * TOTAL: 11 spaces (with FLOAT_PRECISION = 2).
     */
 
     // Allocate the buffer on the heap (+1 for the null terminator)

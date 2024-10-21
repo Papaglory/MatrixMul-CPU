@@ -5,8 +5,8 @@
 # bash script to create the test executables.
 
 # Make variable names for the test file
-TEST_FILE="tests/matrix_init_test.c"
-OUTPUT_FILE="my_test"
+TEST_FILE="tests/matrix_mult_verification.c"
+OUTPUT_FILE="test"
 
 # Clean and make a new build using make
 make clean
@@ -23,4 +23,4 @@ gcc -g $(find ./build -name "*.o") -o $OUTPUT_FILE -lopenblas
 chmod +x $OUTPUT_FILE
 
 # Run the test file
-./my_test
+./test
