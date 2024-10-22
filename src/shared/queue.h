@@ -24,16 +24,59 @@ typedef struct {
 
 } Queue;
 
+/**
+ * @brief Create a Queue on the heap with the given input capacity.
+ * The capacity represents the capacity of Task objects.
+ *
+ * @param capacity The number of Task objects the Queue can hold.
+ * @return A pointer to the Queue.
+*/
 Queue* queue_create(size_t capacity);
 
+/**
+ * @brief Add Task t to the Queue if there is space.
+ *
+ * @param q The Queue to add the Task to.
+ * @param t The Task to be added. It is passed by value.
+ * @return A value of zero for success and -1 for failure.
+*/
 int queue_add(Queue* q, Task t);
 
+/**
+ * @brief Retrieve the Task that is at the front of the Queue.
+ * If the Queue is empty, the empty_task is returned
+ * (Task empty_task = {0}).
+ *
+ * @param q The Queue to retrieve the task from.
+ * @return The Task passed as value. If an error occured, the empty_task.
+*/
 Task queue_get(Queue* q);
 
+/**
+ * @brief Retrieve the Task that is at the front of the Queue
+ * without deleting the Task from the Queue.
+ * If the Queue is empty, the empty_task is returned
+ * (Task empty_task = {0}).
+ *
+ * @param q The Queue to retrieve the task from.
+ * @return The Task passed as value. If an error occured, the empty_task.
+*/
 Task queue_peek(Queue* q);
 
+/**
+ * @brief Determines if the Queue is empty.
+ *
+ * @param q The Queue under consideration.
+ * @return True if it is empty, false if not. True if an error occured.
+*/
 bool queue_is_empty(Queue* q);
 
+/**
+ * @brief Free the Queue from memory.
+ *
+ * @param q The Queue to free.
+ * @return A value of zero for success and -1 if an error occured.
+*/
 int queue_free(Queue* q);
 
 #endif // QUEUE_H

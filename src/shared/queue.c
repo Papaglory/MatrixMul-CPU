@@ -64,6 +64,11 @@ Task queue_get(Queue* q) {
         return empty_task;
     }
 
+    if (queue_is_empty(q)) {
+        Task empty_task = {0};
+        return empty_task;
+    }
+
     // Retrieve the Task from the array
     Task t;
     memcpy(&t, &q->elements[q->front], sizeof(Task));
