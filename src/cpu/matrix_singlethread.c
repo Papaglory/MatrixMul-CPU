@@ -46,7 +46,7 @@ Matrix* matrix_singlethread_mult(Matrix* A, Matrix* B, size_t block_size) {
       errno = EINVAL;
       perror("Error: Unable to allocate memory for Matrix C");
       return NULL;
-    }
+   }
 
     // retrieve internal Matrix arrays
     double* A_arr = A->values;
