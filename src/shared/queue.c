@@ -41,7 +41,7 @@ int queue_add(Queue* q, Task t) {
 
     if (q->size >= q->capacity) {
         // The Queue is full
-        printf("%s\n", "The Queue is full");
+        printf("%s\n", "Warning: The Queue is full");
         return -1;
     }
 
@@ -66,6 +66,7 @@ Task queue_get(Queue* q) {
 
     if (queue_is_empty(q)) {
         Task empty_task = {0};
+        printf("The Queue is empty!\n");
         return empty_task;
     }
 
