@@ -3,6 +3,7 @@
 #include <errno.h>
 #include "matrix_multithread.h"
 #include "../shared/matrix.h"
+#include "../shared/queue.h"
 
 /**
  * @brief Determines the smallest of the two input integer values.
@@ -34,19 +35,70 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
         return NULL;
     }
 
-    size_t temp = min(n, m);
-    if (block_size == 0 || block_size > min(temp, p)) {
+    size_t min_nm = min(n, m);
+    if (block_size == 0 || block_size > min(min_nm, p)) {
         errno = EINVAL;
         perror("Error: An invalid block size has been chosen");
         return NULL;
     }
 
+    // Instantiate Matrix C
     Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
     if (!C) {
-      errno = EINVAL;
-      perror("Error: Unable to allocate memory for Matrix C");
-      return NULL;
-   }
+        errno = EINVAL;
+        perror("Error: Unable to allocate memory for Matrix C");
+        return NULL;
+    }
+
+    // The number of blocks / tasks in C for Queue creation
+    size_t NUM_TASKS = 0;
+
+    // Determine if we have edge cases when blocking / tiling Matrix C
+    bool perfect_row = false;
+    bool perfect_col = false;
+    if (n % block_size == 0) { perfect_row = true; }
+    if (p % block_size == 0) { perfect_col = true; }
+
+    /*
+     * The number of full blocks along each dimension in C.
+     * Division with size_t floors the value to closest whole number.
+     */
+    size_t full_row_blocks = p / block_size;
+    size_t full_col_blocks = n / block_size;
+    size_t full_total_blocks = n * p / block_size;
+
+    // Depending on edge cases, determine the total blocks in Matrix C
+    if (perfect_row && perfect_col) {
+        NUM_TASKS = full_total_blocks;
+    } else if (perfect_row && !perfect_col) {
+        NUM_TASKS = full_total_blocks + full_col_blocks;
+    } else if (!perfect_row && perfect_col) {
+        NUM_TASKS = full_total_blocks + full_row_blocks;
+    } else {
+        // No perfects
+        NUM_TASKS = full_total_blocks + full_row_blocks + full_col_blocks;
+    }
+
+    // Set up Queue
+    Queue* q = queue_create(NUM_TASKS);
+
+    // Turn each block in C into a Task for the Queue
+    for (int i = 0; i < n; i += block_size) {
+        for (int j = 0; j < m; j += block_size) {
+
+            // These make sure we do not leave Matrix C due to edge cases
+            size_t i_max = min(i + block_size, n);
+            size_t j_max = min(j + block_size, p);
+
+            // Store the block inside a Task and enqueue it
+            Task t = task_create(A, B, C, block_size, i, j, i_max, j_max);
+            queue_add(q, t);
+        }
+    }
+
+
+
+
 
     // retrieve internal Matrix arrays
     double* A_arr = A->values;
