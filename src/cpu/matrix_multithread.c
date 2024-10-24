@@ -6,17 +6,7 @@
 #include "../shared/matrix.h"
 #include "../shared/queue.h"
 #include "../shared/thread_args.h"
-
-/**
- * @brief Determines the smallest of the two input integer values.
- * @param a The first integer.
- * @param b The second integer.
- *
- * @return The integer that is the smallest.
-*/
-int min(int a, int b) {
-    return (a < b) ? a : b;
-}
+#include "../shared/matrix_utils.h"
 
 /**
  * @brief Helper function for matrix_multithread_mult(). It establishes
@@ -158,23 +148,17 @@ void* process_tasks(void* arg) {
     while (true) {
 
         // Lock the Queue with the mutex before accessing
-        pthread_mutex_lock(&queue_lock);
+        // TODO pthread_mutex_lock(&queue_lock);
 
         Task t;
         if (queue_is_empty(q)) {
-            int error_code = pthread_mutex_unlock(&queue_lock);
-            if (error_code != 0) {
-                errno = EAGAIN;
-                perror("Error: Mutex unlock failed");
-                return NULL;
-            }
             break;
         }
 
         t = queue_get(q);
 
         // Unlock the Queue with the mutex to give access to other threads
-        pthread_mutex_unlock(&queue_lock);
+        //pthread_mutex_unlock(&queue_lock);
 
         // Perform Matrix multiplication with the Task
         thread_mult(t);
@@ -220,6 +204,28 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
     // Create a Queue filled with all the tasks / blocks to calculate in C
     Queue* q = preprocessing(A, B, C, block_size);
 
+
+    // Create the function argument for the thread function
+    ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+    args->q = q;
+    args->C = C;
+
+    process_tasks(args);
+
+    // Free the threads and allocated memory
+    free(q);
+    free(args);
+
+    // Return the result
+    return C;
+}
+
+
+void temp() {
+
+    Queue* q = NULL;
+    Matrix* C = NULL;
+
     // Create array to hold threads
     size_t num_threads = 42;
     pthread_t threads[num_threads];
@@ -242,15 +248,12 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
             errno = EAGAIN;
             perror("Error: Creating thread failed");
             // TODO Free threads and allocated memory before returning
-            return NULL;
+            //return NULL;
         }
     }
 
-    // Free the threads and allocated memory
 
-    free(args);
-    free(q);
 
-    // Return the result
-    return C;
+
+
 }

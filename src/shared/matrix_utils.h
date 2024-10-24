@@ -40,4 +40,13 @@ Matrix* generate_matrix(int VALUES_MIN, int VALUES_MAX,
  */
 void matrix_mult_openblas(double *A, double *B, double *C, int n, int m, int p);
 
+/**
+ * @brief Determines the smallest of the two input integer values.
+ * @param a The first integer.
+ * @param b The second integer.
+ *
+ * @return The integer that is the smallest.
+*/
+int min(int a, int b);
+
 #endif // MATRIX_UTILS_H

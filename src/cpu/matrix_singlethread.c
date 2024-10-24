@@ -3,17 +3,7 @@
 #include <errno.h>
 #include "matrix_singlethread.h"
 #include "../shared/matrix.h"
-
-/**
- * @brief Determines the smallest of the two input integer values.
- * @param a The first integer.
- * @param b The second integer.
- *
- * @return The integer that is the smallest.
-*/
-int min(int a, int b) {
-    return (a < b) ? a : b;
-}
+#include "../shared/matrix_utils.h"
 
 Matrix* matrix_singlethread_mult(Matrix* A, Matrix* B, size_t block_size) {
 

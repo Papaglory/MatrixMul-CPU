@@ -64,3 +64,7 @@ void matrix_mult_openblas(double *A, double *B, double *C, int n, int m, int p) 
                 0.0,    // Beta scalar of C
                 C, p);  // Leading dimension of C
 }
+
+int min(int a, int b) {
+    return (a < b) ? a : b;
+}
