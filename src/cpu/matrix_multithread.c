@@ -5,7 +5,6 @@
 #include "matrix_multithread.h"
 #include "../shared/matrix.h"
 #include "../shared/queue.h"
-#include "../shared/thread_args.h"
 #include "../shared/matrix_utils.h"
 
 /**
@@ -21,9 +20,8 @@
 */
 Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
 
-    // Extract Matrix dimensions
+    // Extract Matrix dimensions for C
     size_t n = A->num_rows;
-    size_t m = A->num_cols;
     size_t p = B->num_cols;
 
     // The number of blocks / tasks in C for Queue creation
@@ -91,7 +89,6 @@ void thread_mult(Task t) {
     Matrix* C = t.C;
 
     // Extract Matrix dimensions
-    size_t n = A->num_rows;
     size_t m = A->num_cols;
     size_t p = B->num_cols;
 
@@ -126,39 +123,52 @@ void thread_mult(Task t) {
     }
 }
 
+// Mutex lock used to access the Queue
 pthread_mutex_t queue_lock;
 
 /**
- * TODO UPDATE
- * @brief Helper function to task_worker(). This function encapsulates
- * the Matrix multiplication done by a single thread given the input
- * Task t.
+ * @brief Function used by the threads. A thread will access the Queue
+ * and retrieve a Task object that describes a block of Matrix C that
+ * needs to be calculated.
  *
- * @param t The Task passed as value that contains the information
- * about the corresponding block in Matrix C.
+ * @param A pointer to a ThreadArgs object on the heap that
+ * contains the Queue.
+ *
+ * @return In both cases of success and failure, it returns NULL.
+ * Failures are however logged using perror.
 */
 void* process_tasks(void* arg) {
 
-    // Extract arguments
-    ThreadArgs* args = (ThreadArgs*)arg;
-    Queue* q = args->q;
-    Matrix* C = args->C;
+    // Extract argument
+    Queue* q = (Queue*) arg;
 
     // Keep going until the Queue is empty (true due to mutex for Queue)
     while (true) {
 
         // Lock the Queue with the mutex before accessing
-        // TODO pthread_mutex_lock(&queue_lock);
+        if (pthread_mutex_lock(&queue_lock) != 0) {
+            perror("Error: Mutex lock failed");
+            return NULL;
+        }
 
         Task t;
         if (queue_is_empty(q)) {
+            // Queue is empty, unlock mutex and leave
+            if(pthread_mutex_unlock(&queue_lock) != 0) {
+                perror("Error: Mutex unlock failed");
+                return NULL;
+            }
             break;
         }
 
+        // Retreive the Task
         t = queue_get(q);
 
         // Unlock the Queue with the mutex to give access to other threads
-        //pthread_mutex_unlock(&queue_lock);
+        if (pthread_mutex_unlock(&queue_lock) != 0) {
+            perror("Error: Mutex unlock failed");
+            return NULL;
+        }
 
         // Perform Matrix multiplication with the Task
         thread_mult(t);
@@ -204,56 +214,55 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
     // Create a Queue filled with all the tasks / blocks to calculate in C
     Queue* q = preprocessing(A, B, C, block_size);
 
-
-    // Create the function argument for the thread function
-    ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
-    args->q = q;
-    args->C = C;
-
-    process_tasks(args);
-
-    // Free the threads and allocated memory
-    free(q);
-    free(args);
-
-    // Return the result
-    return C;
-}
-
-
-void temp() {
-
-    Queue* q = NULL;
-    Matrix* C = NULL;
+    // Initialize the mutex for the Queue
+    pthread_mutex_init(&queue_lock, NULL);
 
     // Create array to hold threads
-    size_t num_threads = 42;
-    pthread_t threads[num_threads];
-
-    // Instantiate each thread on the stack
-    for (size_t i = 0; i < num_threads; i ++) {
-        pthread_t thread;
-        threads[i] = thread;
-    }
-
-    // Create the function argument for the thread function
-    ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
-    args->q = q;
-    args->C = C;
+    const size_t NUM_THREADS = 200;
+    pthread_t threads[NUM_THREADS];
 
     // Assign each thread to the task_worker() function
-    for (size_t i = 0; i < num_threads; i++) {
-        int error_code = pthread_create(&threads[i], NULL, process_tasks, args);
-        if (error_code != 0) {
-            errno = EAGAIN;
+    for (size_t i = 0; i < NUM_THREADS; i++) {
+
+        // Create a thread and check for successfull initialization
+        if (pthread_create(&threads[i], NULL, process_tasks, q) != 0) {
             perror("Error: Creating thread failed");
-            // TODO Free threads and allocated memory before returning
-            //return NULL;
+
+            // Handle clean-up by canceling threads and freeing allocations
+            for (size_t j = 0; j < i; j++) {
+                if (pthread_cancel(threads[j]) != 0) {
+                    perror("Error: Canceling thread failed");
+                }
+            }
+
+            // Destory the Queue mutex
+            if (pthread_mutex_destroy(&queue_lock) != 0) {
+                perror("Error: Destorying queue_lock mutex failed");
+            }
+
+            return NULL;
         }
     }
 
+    // Have the main thread wait for each thread to finish
+    for (size_t i = 0; i < NUM_THREADS; i++) {
 
+        if (pthread_join(threads[i], NULL) != 0) {
+            perror("Error: pthread_join failed");
 
+            free(q);
+            pthread_mutex_destroy(&queue_lock);
+            free(C);
+            return NULL;
+        }
+    }
 
+    // Free allocated memory
+    free(q);
 
+    // Destory the Queue mutex
+    pthread_mutex_destroy(&queue_lock);
+
+    // Return the result
+    return C;
 }

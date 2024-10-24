@@ -4,6 +4,7 @@
 #include <time.h>
 #include "../src/shared/matrix.h"
 #include "../src/cpu/matrix_multithread.h"
+#include "../src/cpu/matrix_singlethread.h"
 #include "../src/shared/matrix_utils.h"
 
 int main() {
@@ -11,22 +12,23 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_multi_verification.c--------");
 
     // Benchmark parameters
-    const int RUN_COUNT = 1000;
-    const int BLOCK_SIZE = 1; // Does not matter since we only care about result
+    const int RUN_COUNT = 100;
+    const int BLOCK_SIZE = 8; // Does not matter since we only care about result
     // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
+    const bool using_multithread = false;
 
     // Matrix generation parameters
     const double VALUES_MIN = -1e-9;
     const double VALUES_MAX = 1e-9;
-    const size_t DIMENSIONS_MIN = 100;
-    const size_t DIMENSIONS_MAX = 100;
+    const size_t DIMENSIONS_MIN = 1000;
+    const size_t DIMENSIONS_MAX = 1000;
     const int seed = 42;
 
     // Set the seed for reproducibility
     srand(seed);
 
-    bool mismatch_detected = false;
+    bool mismatch_detected = true;
     double total_time = 0;
     for (size_t i = 0; i < RUN_COUNT; i++) {
 
@@ -43,7 +45,12 @@ int main() {
         double* C_blas = (double*)malloc(sizeof(double) * n * p);
 
         // Do the matrix multiplications
-        Matrix* C = matrix_multithread_mult(A, B, BLOCK_SIZE);
+        Matrix* C = NULL;
+        if (using_multithread) {
+            C = matrix_multithread_mult(A, B, BLOCK_SIZE);
+        } else {
+            C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
+        }
 
         matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
 
@@ -53,28 +60,20 @@ int main() {
             if (fabs(C->values[j] - C_blas[j]) > APPROXIMATION_THRESHOLD) {
                 printf("Error: The matrix mult result differs!\n");
                 mismatch_detected = true;
-                break;
+                matrix_free(A);
+                matrix_free(B);
+                matrix_free(C);
+                free(C_blas);
+
+                printf("My implementation %f\n", C->values[j]);
+                printf("BLAS implementation %f\n", C_blas[j]);
+
+                return 0;
             }
         }
 
         Matrix* C_m = matrix_create_with(pattern_zero, NULL, n, p);
         C_m->values = C_blas;
-
-        // If there is a mismatch, inspect the two matrices
-        if (mismatch_detected) {
-            printf("My Matrix\n");
-            matrix_print(C);
-            printf("BLAS Matrix\n");
-            matrix_print(C_m);
-
-            // Free the allocated data corresponding to this run
-            matrix_free(A);
-            matrix_free(B);
-            matrix_free(C);
-            free(C_blas);
-
-            break;
-        }
 
         // Free the allocated data corresponding to this run
         matrix_free(A);
