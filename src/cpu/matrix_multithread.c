@@ -12,9 +12,9 @@
  * a Queue object and fills it with Task objects that reflect each
  * subjob / block that needs to be calculated in Matrix C.
  *
- * @param A Pointer to Matrix A (A x B = C)
- * @param B Pointer to Matrix B
- * @param C Pointer to Matrix C
+ * @param A Pointer to Matrix A (A x B = C).
+ * @param B Pointer to Matrix B.
+ * @param C Pointer to Matrix C.
  * @param block_size The block size used in the blocking / tiling method.
  * @return Pointer to the Queue.
 */
