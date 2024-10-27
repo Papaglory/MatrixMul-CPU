@@ -108,15 +108,27 @@ void thread_mult(Task t) {
 
     // Loop goes through blocks in the shared dimension
     for (size_t k = 0; k < m; k += block_size) {
+        size_t k_min = min(k + block_size, m);
 
         // These two loops let us consider a single element in C
         for (size_t ii = C_row_start; ii < C_row_end; ii++) {
             for (size_t jj = C_col_start; jj < C_col_end; jj++) {
 
-                // This loop handles the dot product
-                for (size_t kk = k; kk < min(k + block_size, m); kk++) {
+                // This loop handles the dot product (using loop unrolling)
+                size_t kk = 0;
+                size_t c_index = ii * p + jj;
+                size_t a_row_offset = ii * m;
+                for (kk = k; kk + 3 < k_min; kk += 4) {
                     // Updating a single element in C block
-                    C_arr[ii * p + jj] += A_arr[ii * m + kk] * B_arr[kk * p + jj];
+                    C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
+                    C_arr[c_index] += A_arr[a_row_offset + (kk + 1)] * B_arr[(kk + 1) * p + jj];
+                    C_arr[c_index] += A_arr[a_row_offset + (kk + 2)] * B_arr[(kk + 2) * p + jj];
+                    C_arr[c_index] += A_arr[a_row_offset + (kk + 3)] * B_arr[(kk + 3) * p + jj];
+                }
+                // Handle residual operations not handled by the loop unrolling
+                for (; kk < k_min; kk ++) {
+                    // Updating a single element in C block
+                    C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
                 }
             }
         }
@@ -218,7 +230,7 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
     pthread_mutex_init(&queue_lock, NULL);
 
     // Create array to hold threads
-    const size_t NUM_THREADS = 200;
+    const size_t NUM_THREADS = 16;
     pthread_t threads[NUM_THREADS];
 
     // Assign each thread to the task_worker() function

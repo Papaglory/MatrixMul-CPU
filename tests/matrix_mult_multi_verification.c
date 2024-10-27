@@ -12,21 +12,24 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_multi_verification.c--------");
 
     // Benchmark parameters
-    const int RUN_COUNT = 100;
-    const int BLOCK_SIZE = 8; // Does not matter since we only care about result
+    const int RUN_COUNT = 5;
+    const int BLOCK_SIZE = 16; // Does not matter since we only care about result
     // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
-    const bool using_multithread = false;
 
     // Matrix generation parameters
     const double VALUES_MIN = -1e-9;
     const double VALUES_MAX = 1e-9;
-    const size_t DIMENSIONS_MIN = 1000;
-    const size_t DIMENSIONS_MAX = 1000;
-    const int seed = 42;
+    const size_t DIMENSIONS_MIN = 100;
+    const size_t DIMENSIONS_MAX = 3000;
+    const int seed = 100;
 
     // Set the seed for reproducibility
     srand(seed);
+
+    // Utils for tracking time
+    struct timespec start, end;
+    double elapsed_time;
 
     bool mismatch_detected = true;
     double total_time = 0;
@@ -46,11 +49,34 @@ int main() {
 
         // Do the matrix multiplications
         Matrix* C = NULL;
-        if (using_multithread) {
-            C = matrix_multithread_mult(A, B, BLOCK_SIZE);
-        } else {
-            C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
-        }
+
+        // Start timer
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
+        // Do single thread multiplication
+        C = matrix_multithread_mult(A, B, BLOCK_SIZE);
+
+        // End timer
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        // Calculate elapsed time in seconds
+        elapsed_time = (end.tv_sec - start.tv_sec) +
+            (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("%-35s %f\n", "MULTI Elapsed time:", elapsed_time);
+
+        // Start timer
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
+        // Do multithread multiplication
+        C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
+
+        // End timer
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        // Calculate elapsed time in seconds
+        elapsed_time = (end.tv_sec - start.tv_sec) +
+            (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("%-35s %f\n", "SINGLE Elapsed time:", elapsed_time);
 
         matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
 
