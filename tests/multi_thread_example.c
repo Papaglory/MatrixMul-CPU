@@ -11,6 +11,7 @@ typedef struct {
     Queue* q;
     size_t FINAL_VALUE;
     double* arr;
+    size_t batch_size;
 
 } ThreadArgs;
 
@@ -193,6 +194,37 @@ void* worker_thread_queues(void* arg) {
     return NULL;
 }
 
+/**
+ * TODO: Does not use a mutex as the threads interact with their own Queue.
+ * Same function but uses batches instead of retrieving single Task.
+ */
+void* worker_thread_queues_batch(void* arg) {
+
+    // Unpack arguments
+    ThreadArgs* args = arg;
+    Queue* q = args->q;
+    size_t FINAL_VALUE = args->FINAL_VALUE;
+    double* arr = args->arr;
+
+    while (!queue_is_empty(q)) {
+
+        // Retrieve batch of tasks
+        size_t batch_size = args->batch_size;
+        Task* batch = queue_get_batch(q, &batch_size);
+
+        // Process each Task in the batch
+        for (size_t i = 0; i < batch_size; i++) {
+            Task t = batch[i];
+            size_t index = t.block_size;
+            while (arr[index] < FINAL_VALUE) {
+                arr[index] *= 1.0000001;  // Small multiplication to simulate more intensive computation
+            }
+        }
+        free(batch);
+    }
+
+    return NULL;
+}
 
 /**
  * @brief A simple multithread example having a unique Queue for each
@@ -207,12 +239,14 @@ void* worker_thread_queues(void* arg) {
  * @param NUM_THREADS The number of threads working concurrently.
  * @param FINAL_VALUE The final value that acts as part of the condition
  * check when incrementing the values in the array.
+ * @param BATCH_SIZE The batch size used when a thread retrieves
+ * tasks from the Queue.
  *
  * @return A value indicating the time to solve the problem. The timer starts
  * immediately after function call and includes both preprocessing and
  * clean-up. Returns -1 if error occured.
  */
-double test_local_queues(size_t NUM_TASKS, size_t NUM_THREADS, size_t FINAL_VALUE) {
+double test_local_queues(size_t NUM_TASKS, size_t NUM_THREADS, size_t FINAL_VALUE, size_t BATCH_SIZE) {
 
     if (NUM_TASKS == 0 || NUM_THREADS == 0 || FINAL_VALUE == 0) {
         errno = EINVAL;
@@ -318,9 +352,10 @@ double test_local_queues(size_t NUM_TASKS, size_t NUM_THREADS, size_t FINAL_VALU
         args_arr[i]->q = queues[i];
         args_arr[i]->FINAL_VALUE = FINAL_VALUE;
         args_arr[i]->arr = arr;
+        args_arr[i]->batch_size = BATCH_SIZE;
 
         // Create thread
-        if (pthread_create(&threads[i], NULL, worker_thread_queues, args_arr[i]) != 0) {
+        if (pthread_create(&threads[i], NULL, worker_thread_queues_batch, args_arr[i]) != 0) {
             perror("Error: Creating thread failed");
             for (size_t j = 0; j < i; j++) {
                 pthread_cancel(threads[j]);
@@ -370,9 +405,10 @@ int main() {
 
     // Benchmark parameters
     const size_t NUM_RUNS = 1;
-    const size_t NUM_TASKS = 10000;
+    const size_t NUM_TASKS = 1000;
     const size_t NUM_THREADS = 16;
-    const size_t FINAL_VALUE = 10;
+    const size_t FINAL_VALUE = 10000;
+    const size_t BATCH_SIZE = 128;
 
     // Testing with a single Queue
     double total_time = 0;
@@ -385,7 +421,7 @@ int main() {
     // Testing with an unique Queue per thread
     total_time = 0;
     for (size_t i = 0; i < NUM_RUNS; i++) {
-        total_time += test_local_queues(NUM_TASKS, NUM_THREADS, FINAL_VALUE);
+        total_time += test_local_queues(NUM_TASKS, NUM_THREADS, FINAL_VALUE, BATCH_SIZE);
     }
 
     printf("%-35s %f\n", "test_local_queues average time: ", total_time / NUM_RUNS);
