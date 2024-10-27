@@ -39,31 +39,30 @@ int main() {
     queue_add(q, t2);
     print_stats(q);
 
-    Task ret = queue_get(q);
-    printf("%s %zu\n", "Task id:", ret.block_size);
-    print_stats(q);
-
     queue_add(q, t3);
     print_stats(q);
 
-    queue_add(q, t3);
+    size_t first = queue_get(q).block_size;
+    printf("%s %zu\n", "Retrieved", first);
     print_stats(q);
 
-    Task re = queue_get(q);
-    printf("%s %zu\n", "Task id:", ret.block_size);
+    size_t snd = queue_get(q).block_size;
+    printf("%s %zu\n", "Retrieved", snd);
     print_stats(q);
 
-    Task e = queue_get(q);
-    printf("%s %zu\n", "Task id:", ret.block_size);
-    print_stats(q);
 
-    Task r = queue_get(q);
-    printf("%s %zu\n", "Task id:", ret.block_size);
+    size_t batch_size = 2;
+    Task* batch = queue_get_batch(q, &batch_size);
+    if (batch_size != 2) {
+        printf("The function has altered the batch size\n");
+    }
     print_stats(q);
-
-    Task l = queue_get(q);
-    printf("%s %zu\n", "Task id:", ret.block_size);
-    print_stats(q);
+    if (batch) {
+        for (size_t i = 0; i < batch_size; i++) {
+            size_t id = batch[i].block_size;
+            printf("%s %zu\n", "ID:", id);
+        }
+    }
 
     return 0;
 }

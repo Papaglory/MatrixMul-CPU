@@ -81,28 +81,28 @@ Task queue_get(Queue* q) {
     return t;
 }
 
-Task* queue_get_batch(Queue* q, size_t batch_size) {
+Task* queue_get_batch(Queue* q, size_t* batch_size) {
 
-    if (!q || batch_size == 0) {
+    if (!q || queue_is_empty(q) || batch_size == 0) {
         errno = EINVAL;
-        perror("Error: No Queue or batch_size is 0\n");
+        perror("Error: No Queue, empty Queue or batch_size is 0\n");
         return NULL;
     }
 
     // Check if we should resize batch based on Queue size
-    if (batch_size > q->size) {
-        batch_size = q->size;
+    if (*batch_size > q->size) {
+        *batch_size = q->size;
     }
 
     // Allocate array to store batch
-    Task* batch = (Task*)malloc(sizeof(Task) * batch_size);
+    Task* batch = (Task*)malloc(sizeof(Task) * *batch_size);
     if (!batch) {
         perror("Error: Failed to allocate batch array for queue\n");
         return NULL;
     }
 
     // Insert the tasks into batch array
-    for (size_t i = 0; i < batch_size; i++) {
+    for (size_t i = 0; i < *batch_size; i++) {
 
         // Copy the tasks into the batch array
         memcpy(&batch[i], &q->elements[q->front], sizeof(Task));
