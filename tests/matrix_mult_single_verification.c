@@ -8,7 +8,7 @@
 
 int main() {
 
-    printf("%s\n", "--------STARTING matrix_mult_verification.c--------");
+    printf("%s\n", "--------STARTING matrix_mult_single_verification.c--------");
 
     // Benchmark parameters
     const int RUN_COUNT = 10;
@@ -72,7 +72,7 @@ int main() {
             matrix_free(C);
             free(C_blas);
 
-            break;
+            return 0;
         }
 
         // Free the allocated data corresponding to this run
@@ -83,7 +83,7 @@ int main() {
     }
 
     printf("%s\n", "All calculations are correct");
-    printf("%s\n", "--------FINISHED matrix_mult_verification.c--------");
+    printf("%s\n", "--------FINISHED matrix_mult_single_verification.c--------");
 
     return 0;
 }

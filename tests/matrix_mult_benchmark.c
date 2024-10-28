@@ -1,33 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
 #include "../src/shared/matrix.h"
+#include "../src/cpu/matrix_multithread.h"
 #include "../src/cpu/matrix_singlethread.h"
 #include "../src/shared/matrix_utils.h"
 
 int main() {
 
-    printf("%s\n", "--------STARTING matrix_mult_verification.c--------");
+    printf("%s\n", "--------STARTING matrix_mult_multi_verification.c--------");
 
     // Benchmark parameters
-    const int RUN_COUNT = 1;
-    const int WARMUP_COUNT = 1;
-    const int AVERAGE_COUNT = 1;
-    const int BLOCK_SIZE = 1;
+    const size_t RUN_COUNT = 5;
+    const size_t BLOCK_SIZE = 16; // Does not matter since we only care about result
+    // Used if there are different rounding errors between the implementations
+    const double APPROXIMATION_THRESHOLD = 1e-9;
+    const size_t NUM_THREADS = 16;
 
     // Matrix generation parameters
     const double VALUES_MIN = -1e-9;
     const double VALUES_MAX = 1e-9;
-    const size_t DIMENSIONS_MIN = 1000;
-    const size_t DIMENSIONS_MAX = 1000;
-    const int seed = 42;
-
-    struct timespec start, end;
-    double elapsed_time;
+    const size_t DIMENSIONS_MIN = 100;
+    const size_t DIMENSIONS_MAX = 3000;
+    const int seed = 100;
 
     // Set the seed for reproducibility
     srand(seed);
 
+    // Utils for tracking time
+    struct timespec start, end;
+    double elapsed_time;
+
+    bool mismatch_detected = true;
     double total_time = 0;
     for (size_t i = 0; i < RUN_COUNT; i++) {
 
@@ -43,41 +48,69 @@ int main() {
         // openBLAS requires the resulting C array as well as argument
         double* C_blas = (double*)malloc(sizeof(double) * n * p);
 
-        // Perform warmup
-        for (size_t j = 0; j < WARMUP_COUNT; j++) {
-            // Do the matrix multiplications
-            Matrix* C = matrix_singlethread_mult(A, B, 1);
-            matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
+        // Do the matrix multiplications
+        Matrix* C = NULL;
 
-            matrix_free(C);
+        // Start timer
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
+        // Do single thread multiplication
+        C = matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
+
+        // End timer
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        // Calculate elapsed time in seconds
+        elapsed_time = (end.tv_sec - start.tv_sec) +
+            (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("%-35s %f\n", "MULTI Elapsed time:", elapsed_time);
+
+        // Start timer
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
+        // Do multithread multiplication
+        C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
+
+        // End timer
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        // Calculate elapsed time in seconds
+        elapsed_time = (end.tv_sec - start.tv_sec) +
+            (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("%-35s %f\n", "SINGLE Elapsed time:", elapsed_time);
+
+        matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
+
+        // Compare result
+        for (size_t j = 0; j < n * p; j++) {
+
+            if (fabs(C->values[j] - C_blas[j]) > APPROXIMATION_THRESHOLD) {
+                printf("Error: The matrix mult result differs!\n");
+                mismatch_detected = true;
+                matrix_free(A);
+                matrix_free(B);
+                matrix_free(C);
+                free(C_blas);
+
+                printf("My implementation %f\n", C->values[j]);
+                printf("BLAS implementation %f\n", C_blas[j]);
+
+                return 0;
+            }
         }
 
-        double time = 0;
-        for (size_t j = 0; j < AVERAGE_COUNT; j++) {
-
-            clock_gettime(CLOCK_MONOTONIC, &start);
-            // Do the matrix multiplications
-            Matrix* C = matrix_singlethread_mult(A, B, 1);
-            matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
-            clock_gettime(CLOCK_MONOTONIC, &end);
-
-            matrix_free(C);
-
-            // Calculate elapsed time in seconds
-            elapsed_time = (end.tv_sec - start.tv_sec) +
-                           (end.tv_nsec - start.tv_nsec) / 1e9;
-            time += elapsed_time;
-        }
-
-        total_time += time / AVERAGE_COUNT;
+        Matrix* C_m = matrix_create_with(pattern_zero, NULL, n, p);
+        C_m->values = C_blas;
 
         // Free the allocated data corresponding to this run
         matrix_free(A);
         matrix_free(B);
+        matrix_free(C);
         free(C_blas);
     }
 
-    printf("%s\n", "--------FINISHED matrix_mult_verification.c--------");
+    printf("%s\n", "All calculations are correct");
+    printf("%s\n", "--------FINISHED matrix_mult_multi_verification.c--------");
 
     return 0;
 }

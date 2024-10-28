@@ -1,3 +1,14 @@
+/**
+ * @file multi_thread_example.c
+ *
+ * @brief
+ * This file is used as a simple proving ground for utilizing multiple
+ * threads. The scenario is constructed to simmulate the environment
+ * found in matrix_multithread.c where we have a main thread that creates
+ * threads that retrieves work from a Queue which corresponds to blocks
+ * found in the Matrix that needs to be calculated.
+ */
+
 #include <pthread.h>
 #include <errno.h>
 #include <stdio.h>
