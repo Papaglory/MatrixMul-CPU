@@ -17,7 +17,6 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
     // Allocate a 1D array with size determined by num_rows and num_cols
     double* values = (double*)malloc(sizeof(double) * num_rows * num_cols);
     if (!values) {
-        errno = ENOMEM;
         perror("Error: Allocation of Matrix array failed");
         return NULL;
     }
@@ -32,7 +31,6 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
     if (!m) {
         // free allocated matrix array elements before returning
         free(values);
-        errno = ENOMEM;
         perror("Error: Allocation of the Matrix failed");
         return NULL;
     }
@@ -58,7 +56,6 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
     // Allocate a 1D array with size determined by num_rows and num_cols
     double* values = (double*)malloc(sizeof(double) * num_rows * num_cols);
     if (!values) {
-        errno = ENOMEM;
         perror("Error: Allocation of Matrix array failed");
         return NULL;
     }
@@ -75,7 +72,6 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
     if (!m) {
         // free allocated matrix array elements before returning
         free(values);
-        errno = ENOMEM;
         perror("Error: Allocation of the Matrix failed");
         return NULL;
     }
@@ -102,7 +98,6 @@ Matrix* matrix_create_from_pointers(size_t num_rows, size_t num_cols,
     Matrix* m = (Matrix*)malloc(sizeof(Matrix));
     if (!m) {
         // Matrix allocation failed
-        errno = ENOMEM;
         perror("Error: Failed to allocate Matrix");
         return NULL;
     }
@@ -147,7 +142,6 @@ double* pattern_random_between(double* values, void* args, size_t num) {
     // Initialize row elements
     for (size_t i = 0; i < num; i++) {
         values[i] = rand() % (max - min + 1) + min;
-        //TODO Consider switching rand for multithread.
     }
 
     return values;
@@ -164,7 +158,6 @@ Matrix* matrix_create_with(double* (*pattern)(double* values, void* args, size_t
     // Allocate a 1D array with size determined by num_rows and num_cols
     double* values = (double*)calloc(num_rows * num_cols, sizeof(double));
     if (!values) {
-        errno = EINVAL;
         perror("Error: Allocation failed for Matrix array");
         return NULL;
     }
@@ -181,7 +174,6 @@ Matrix* matrix_create_with(double* (*pattern)(double* values, void* args, size_t
     if (!m) {
         // free allocated matrix array values before returning
         free(values);
-        errno = ENOMEM;
         perror("Error: Allocation of the Matrix failed");
         return NULL;
     }
@@ -257,16 +249,12 @@ int matrix_print(Matrix* m) {
     // A safety margin to prevent buffer overflow (in case of unpredicted Matrix cases)
     const double BUFFER_SAFETY_MARGIN = 1.1f;
 
-    /*
-    */
-
     // Allocate the buffer on the heap (+1 for the null terminator)
     size_t buffer_size = (m->num_rows * m->num_cols) * (9 + FLOAT_PRECISION) + m->num_rows + 1;
     // Apply the safety margin
     buffer_size = (size_t) buffer_size * BUFFER_SAFETY_MARGIN;
     char* buffer = (char*)malloc(buffer_size);
     if (!buffer) {
-        errno = ENOMEM;
         perror("Error: Failed to allocate print buffer");
         return -1;
     }

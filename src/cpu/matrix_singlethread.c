@@ -25,11 +25,15 @@ Matrix* matrix_singlethread_mult(Matrix* A, Matrix* B, size_t block_size) {
     }
 
     size_t min_nm = min(n, m);
-    if (block_size == 0 || block_size > min(min_nm, p)) {
+    if (block_size == 0) {
         errno = EINVAL;
-        perror("Error: An invalid block size has been chosen");
+        perror("Error: Block size cannot be of value 0");
         return NULL;
     }
+
+    // Check if the block size needs to be adjusted for smaller matrices
+    size_t smallest_dimension = min(min_nm, p);
+    block_size = (block_size > smallest_dimension) ? smallest_dimension : block_size;
 
     // Instantiate Matrix C
     Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);

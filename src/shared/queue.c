@@ -8,14 +8,12 @@ Queue* queue_create(size_t capacity) {
 
     Queue* q = (Queue*)malloc(sizeof(Queue));
     if (!q) {
-        errno = ENOMEM;
         perror("Error: Allocation of Queue failed");
         return NULL;
     }
 
     Task* elements = (Task*)malloc(sizeof(Task) * capacity);
     if (!elements) {
-        errno = ENOMEM;
         perror("Error: Allocation of elements in Queue failed");
         free(q);
         return NULL;

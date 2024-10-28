@@ -1,33 +1,14 @@
 #include "matrix_utils.h"
+#include <errno.h>
 #include <stdlib.h>
 #include <cblas.h>
 
-/**
- * @brief Retrieve a random integer between min and max.
- *
- * @param min The smallest integer value (inclusive).
- * @param max The largest integer value (inclusive).
- * @return An integer.
- */
-int random_between(int min, int max) {
+long random_between(long min, long max) {
 
      return rand() % (max + 1 - min) + min;
 }
 
-/**
- * @brief Generate a Matrix with random elements given the parameters
- * found in the function signature.
- *
- * @param VALUES_MIN The minimum possible value an element can be.
- * @param VALUES_MAX The maximum possible value an element can be.
- * @param NUM_ROWS The maximum possible number of rows the generated
- * Matrix can have.
- * @param NUM_COLS The maximum possible number of columns the generated
- * Matrix can have.
- *
- * @return A pointer to the generated Matrix.
- */
-Matrix* generate_matrix(int VALUES_MIN, int VALUES_MAX,
+Matrix* generate_matrix(long VALUES_MIN, long VALUES_MAX,
                         size_t NUM_ROWS, size_t NUM_COLS) {
 
     /*
@@ -43,17 +24,13 @@ Matrix* generate_matrix(int VALUES_MIN, int VALUES_MAX,
     return matrix_create_with(pattern_random_between, min_max, NUM_ROWS, NUM_COLS);
 }
 
-/**
- * @brief Wrapper function of the OpenBLAS matrix multiplication library.
- *
- * @param A 1D array containing the elements of matrix A.
- * @param B 1D array containing the elements of matrix B.
- * @param C 1D array containing the elements of matrix C.
- * @param n The row dimension of A and C.
- * @param m The column dimension of A and row dimension of B.
- * @param p The column dimension of B and C.
- */
-void matrix_mult_openblas(double *A, double *B, double *C, int n, int m, int p) {
+void matrix_mult_openblas(double *A, double *B, double *C, size_t n, size_t m, size_t p) {
+
+    if (!A || !B || !C || n <= 0 || m <= 0 || p <= 0) {
+        errno = EINVAL;
+        perror("Error: Argument for matrix_mult_openblas() are invalid");
+        return;
+    }
 
     // cblas_dgemm uses the formula: C = alpha * A x B + beta * C
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
@@ -65,6 +42,6 @@ void matrix_mult_openblas(double *A, double *B, double *C, int n, int m, int p) 
                 C, p);  // Leading dimension of C
 }
 
-int min(int a, int b) {
+long min(long a, long b) {
     return (a < b) ? a : b;
 }

@@ -14,9 +14,10 @@
  * @param A The first Matrix.
  * @param B The second Matrix.
  * @param block_size The block size used in the blocking / tiling method.
+ * @param NUM_THREADS The number of threads to create and use to calculate.
  * @return A pointer to a newly alloced Matrix which contains the result
  * of the multiplication. Returns NULL if an error occured.
 */
-Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size);
+Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t NUM_THREADS);
 
 #endif // MATRIX_MULTITHREAD_H

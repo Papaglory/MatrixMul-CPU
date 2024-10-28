@@ -10,7 +10,7 @@
  * @param max The largest integer value (inclusive).
  * @return An integer.
  */
-int random_between(int min, int max);
+long random_between(long min, long max);
 
 /**
  * @brief Generate a Matrix with random elements given the parameters
@@ -25,7 +25,7 @@ int random_between(int min, int max);
  *
  * @return A pointer to the generated Matrix.
  */
-Matrix* generate_matrix(int VALUES_MIN, int VALUES_MAX,
+Matrix* generate_matrix(long VALUES_MIN, long VALUES_MAX,
                         size_t NUM_ROWS, size_t NUM_COLS);
 
 /**
@@ -38,7 +38,7 @@ Matrix* generate_matrix(int VALUES_MIN, int VALUES_MAX,
  * @param m The column dimension of A and row dimension of B.
  * @param p The column dimension of B and C.
  */
-void matrix_mult_openblas(double *A, double *B, double *C, int n, int m, int p);
+void matrix_mult_openblas(double *A, double *B, double *C, size_t n, size_t m, size_t p);
 
 /**
  * @brief Determines the smallest of the two input integer values.
@@ -47,6 +47,6 @@ void matrix_mult_openblas(double *A, double *B, double *C, int n, int m, int p);
  *
  * @return The integer that is the smallest.
 */
-int min(int a, int b);
+long min(long a, long b);
 
 #endif // MATRIX_UTILS_H

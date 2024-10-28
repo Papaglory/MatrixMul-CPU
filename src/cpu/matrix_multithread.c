@@ -24,9 +24,6 @@ Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
     size_t n = A->num_rows;
     size_t p = B->num_cols;
 
-    // The number of blocks / tasks in C for Queue creation
-    size_t NUM_TASKS = 0;
-
     // Determine if we have edge cases when blocking / tiling Matrix C
     bool perfect_row = false;
     bool perfect_col = false;
@@ -41,20 +38,23 @@ Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
     size_t full_col_blocks = p / block_size;
     size_t full_total_blocks = full_row_blocks * full_col_blocks;
 
+    // Holds the number of blocks / tasks in C for Queue creation
+    size_t num_tasks = 0;
+
     // Depending on edge cases, determine the total blocks in Matrix C
     if (perfect_row && perfect_col) {
-        NUM_TASKS = full_total_blocks;
+        num_tasks = full_total_blocks;
     } else if (perfect_row && !perfect_col) {
-        NUM_TASKS = full_total_blocks + full_row_blocks;
+        num_tasks = full_total_blocks + full_row_blocks;
     } else if (!perfect_row && perfect_col) {
-        NUM_TASKS = full_total_blocks + full_col_blocks;
+        num_tasks = full_total_blocks + full_col_blocks;
     } else {
         // No perfects
-        NUM_TASKS = full_total_blocks + full_row_blocks + full_col_blocks + 1;
+        num_tasks = full_total_blocks + full_row_blocks + full_col_blocks + 1;
     }
 
     // Set up Queue
-    Queue* q = queue_create(NUM_TASKS);
+    Queue* q = queue_create(num_tasks);
 
     // Turn each block in C into a Task for the Queue
     for (size_t i = 0; i < n; i += block_size) {
@@ -189,7 +189,7 @@ void* process_tasks(void* arg) {
     return NULL;
 }
 
-Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
+Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t NUM_THREADS) {
 
     if (!A || !B) {
         errno = EINVAL;
@@ -209,11 +209,15 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
     }
 
     size_t min_nm = min(n, m);
-    if (block_size == 0 || block_size > min(min_nm, p)) {
+    if (block_size == 0) {
         errno = EINVAL;
-        perror("Error: An invalid block size has been chosen");
+        perror("Error: Block size cannot be of value 0");
         return NULL;
     }
+
+    // Check if the block size needs to be adjusted for smaller matrices
+    size_t smallest_dimension = min(min_nm, p);
+    block_size = (block_size > smallest_dimension) ? smallest_dimension : block_size;
 
     // Instantiate Matrix C
     Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
@@ -230,7 +234,6 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size) {
     pthread_mutex_init(&queue_lock, NULL);
 
     // Create array to hold threads
-    const size_t NUM_THREADS = 16;
     pthread_t threads[NUM_THREADS];
 
     // Assign each thread to the task_worker() function
