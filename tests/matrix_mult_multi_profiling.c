@@ -10,7 +10,7 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_multi_profiling.c--------");
 
     // Benchmark parameters
-    const size_t BLOCK_SIZE = 64;
+    const size_t BLOCK_SIZE = 32;
     const double APPROXIMATION_THRESHOLD = 1e-9;
     const size_t NUM_THREADS = 16;
 
@@ -58,7 +58,7 @@ int main() {
     // Calculate elapsed time in seconds
     elapsed_time_single = (end.tv_sec - start.tv_sec) +
         (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("%-35s %f\n", "SINGLE Elapsed time:", elapsed_time_single);
+    printf("%-35s %f\n", "MULTITHREAD Elapsed time:", elapsed_time_single);
 
     // Free the allocated data corresponding to this run
     matrix_free(A);

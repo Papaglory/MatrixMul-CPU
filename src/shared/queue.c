@@ -12,8 +12,9 @@ Queue* queue_create(size_t capacity) {
         return NULL;
     }
 
-    Task* elements = (Task*)malloc(sizeof(Task) * capacity);
-    if (!elements) {
+    Task* elements = NULL;
+    int result = posix_memalign((void**)&elements, 64, sizeof(Task) * capacity);
+    if (result != 0) {
         perror("Error: Allocation of elements in Queue failed");
         free(q);
         return NULL;

@@ -23,8 +23,9 @@
 Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
 
     // Create a new Matrix that is the transpose of Matrix B
-    double* B_trans_arr = (double*)malloc(sizeof(double) * B->num_rows * B->num_cols);
-    if (!B_trans_arr) {
+    double* B_trans_arr = NULL;
+    int result = posix_memalign((void**)&B_trans_arr, 64, sizeof(double) * B->num_rows * B->num_cols);
+    if (result != 0) {
         perror("Error: Allocation of B transposed array failed");
         return NULL;
     }

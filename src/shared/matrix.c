@@ -15,8 +15,9 @@ Matrix* matrix_create_from_1D_array(size_t num_rows, size_t num_cols,
     }
 
     // Allocate a 1D array with size determined by num_rows and num_cols
-    double* values = (double*)malloc(sizeof(double) * num_rows * num_cols);
-    if (!values) {
+    double* values = NULL;
+    int result = posix_memalign((void**)&values, 64, sizeof(double) * num_rows * num_cols);
+    if (result != 0) {
         perror("Error: Allocation of Matrix array failed");
         return NULL;
     }
@@ -54,8 +55,9 @@ Matrix* matrix_create_from_2D_array(size_t num_rows, size_t num_cols,
     }
 
     // Allocate a 1D array with size determined by num_rows and num_cols
-    double* values = (double*)malloc(sizeof(double) * num_rows * num_cols);
-    if (!values) {
+    double* values = NULL;
+    int result = posix_memalign((void**)&values, 64, sizeof(double) * num_rows * num_cols);
+    if (result != 0) {
         perror("Error: Allocation of Matrix array failed");
         return NULL;
     }
@@ -156,8 +158,10 @@ Matrix* matrix_create_with(double* (*pattern)(double* values, void* args, size_t
     }
 
     // Allocate a 1D array with size determined by num_rows and num_cols
-    double* values = (double*)calloc(num_rows * num_cols, sizeof(double));
-    if (!values) {
+    // double* values = (double*)calloc(num_rows * num_cols, sizeof(double));
+    double* values = NULL;
+    int result = posix_memalign((void**)&values, 64, num_rows * num_cols * sizeof(double));
+    if (result != 0) {
         perror("Error: Allocation failed for Matrix array");
         return NULL;
     }
