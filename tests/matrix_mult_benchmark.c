@@ -4,7 +4,6 @@
 #include <time.h>
 #include "../src/shared/matrix.h"
 #include "../src/cpu/matrix_multithread.h"
-#include "../src/cpu/matrix_singlethread.h"
 #include "../src/shared/matrix_utils.h"
 
 int main() {
@@ -21,7 +20,7 @@ int main() {
     // Matrix generation parameters
     const double VALUES_MIN = -1e-9;
     const double VALUES_MAX = 1e-9;
-    const size_t DIMENSIONS_MIN = 100;
+    const size_t DIMENSIONS_MIN = 3000;
     const size_t DIMENSIONS_MAX = 3000;
     const int seed = 100;
 
@@ -30,11 +29,13 @@ int main() {
 
     // Utils for tracking time
     struct timespec start, end;
-    double elapsed_time;
+    double elapsed_time_multi = 0;
+    double elapsed_time_single = 0;
 
     bool mismatch_detected = true;
     double total_time = 0;
     for (size_t i = 0; i < RUN_COUNT; i++) {
+        printf("\n");
 
         // Generate Matrix dimensions
         const size_t n = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
@@ -55,31 +56,34 @@ int main() {
         clock_gettime(CLOCK_MONOTONIC, &start);
 
         // Do single thread multiplication
+        matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
+
+        // End timer
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        // Calculate elapsed time in seconds
+        elapsed_time_multi = (end.tv_sec - start.tv_sec) +
+            (end.tv_nsec - start.tv_nsec) / 1e9;
+        printf("%-35s %f\n", "MULTI Elapsed time:", elapsed_time_multi);
+
+        // Start timer
+        clock_gettime(CLOCK_MONOTONIC, &start);
+
+        // Do multithread multiplication
+        //C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
         C = matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
 
         // End timer
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         // Calculate elapsed time in seconds
-        elapsed_time = (end.tv_sec - start.tv_sec) +
+        elapsed_time_single = (end.tv_sec - start.tv_sec) +
             (end.tv_nsec - start.tv_nsec) / 1e9;
-        printf("%-35s %f\n", "MULTI Elapsed time:", elapsed_time);
+        printf("%-35s %f\n", "SINGLE Elapsed time:", elapsed_time_single);
 
-        // Start timer
-        clock_gettime(CLOCK_MONOTONIC, &start);
+        // Print the improvement using multithread
+        printf("%s %.0f%s\n", "Multithread improvement", elapsed_time_single / elapsed_time_multi * 100, "%");
 
-        // Do multithread multiplication
-        C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
-
-        // End timer
-        clock_gettime(CLOCK_MONOTONIC, &end);
-
-        // Calculate elapsed time in seconds
-        elapsed_time = (end.tv_sec - start.tv_sec) +
-            (end.tv_nsec - start.tv_nsec) / 1e9;
-        printf("%-35s %f\n", "SINGLE Elapsed time:", elapsed_time);
-
-        matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
 
         // Compare result
         for (size_t j = 0; j < n * p; j++) {

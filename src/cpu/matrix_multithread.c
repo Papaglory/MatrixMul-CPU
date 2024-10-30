@@ -8,9 +8,11 @@
 #include "../shared/matrix_utils.h"
 
 /**
- * @brief Helper function for matrix_multithread_mult(). It establishes
- * a Queue object and fills it with Task objects that reflect each
- * subjob / block that needs to be calculated in Matrix C.
+ * @brief Helper function for matrix_multithread_mult(). It allocates a
+ * Matrix B transposed for the Matrix calculations. This Matrix is
+ * freed at the end of matrix_multithread_mult(). This function also
+ * establishes a Queue object and fills it with Task objects that
+ * reflect each subjob / block that needs to be calculated in Matrix C.
  *
  * @param A Pointer to Matrix A (A x B = C).
  * @param B Pointer to Matrix B.
@@ -19,6 +21,21 @@
  * @return Pointer to the Queue.
 */
 Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
+
+    // Create a new Matrix that is the transpose of Matrix B
+    double* B_trans_arr = (double*)malloc(sizeof(double) * B->num_rows * B->num_cols);
+    if (!B_trans_arr) {
+        perror("Error: Allocation of B transposed array failed");
+        return NULL;
+    }
+
+    // Insert transposed values and Allocate Matrix
+    for (size_t i = 0; i < B->num_rows; i++) {
+        for (size_t j = 0; j < B->num_cols; j++) {
+            B_trans_arr[j * B->num_rows + i] = B->values[i * B->num_cols + j];
+        }
+    }
+    Matrix* B_trans = matrix_create_from_pointers(B->num_cols, B->num_rows, B_trans_arr);
 
     // Extract Matrix dimensions for C
     size_t n = A->num_rows;
@@ -65,7 +82,7 @@ Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
             size_t j_max = min(j + block_size, p);
 
             // Store the block inside a Task and enqueue it
-            Task t = task_create(A, B, C, block_size, i, j, i_max, j_max);
+            Task t = task_create(A, B_trans, C, block_size, i, j, i_max, j_max);
             queue_add(q, t);
         }
     }
@@ -85,16 +102,16 @@ void thread_mult(Task t) {
 
     // Matrices: A x B = C
     Matrix* A = t.A;
-    Matrix* B = t.B;
+    Matrix* B_trans = t.B_trans;
     Matrix* C = t.C;
 
     // Extract Matrix dimensions
     size_t m = A->num_cols;
-    size_t p = B->num_cols;
+    size_t p = B_trans->num_rows;
 
     // retrieve internal Matrix arrays
     double* A_arr = A->values;
-    double* B_arr = B->values;
+    double* B_trans_arr = B_trans->values;
     double* C_arr = C->values;
 
     // The block size to use (blocking method)
@@ -112,24 +129,31 @@ void thread_mult(Task t) {
 
         // These two loops let us consider a single element in C
         for (size_t ii = C_row_start; ii < C_row_end; ii++) {
+            size_t a_row_offset = ii * m;
             for (size_t jj = C_col_start; jj < C_col_end; jj++) {
 
                 // This loop handles the dot product (using loop unrolling)
-                size_t kk = 0;
+                size_t kk = k;
                 size_t c_index = ii * p + jj;
-                size_t a_row_offset = ii * m;
-                for (kk = k; kk + 3 < k_min; kk += 4) {
+                size_t b_row_offset = jj * p;
+                size_t p2 = p * 2;
+                size_t p3 = p * 3;
+                // Hint compiler to fetch from memory once
+                double c_value = C_arr[c_index];
+                for (; kk + 3 < k_min; kk += 4) {
                     // Updating a single element in C block
-                    C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
-                    C_arr[c_index] += A_arr[a_row_offset + (kk + 1)] * B_arr[(kk + 1) * p + jj];
-                    C_arr[c_index] += A_arr[a_row_offset + (kk + 2)] * B_arr[(kk + 2) * p + jj];
-                    C_arr[c_index] += A_arr[a_row_offset + (kk + 3)] * B_arr[(kk + 3) * p + jj];
+                    c_value += A_arr[a_row_offset + kk] * B_trans_arr[b_row_offset + kk];
+                    c_value += A_arr[a_row_offset + (kk + 1)] * B_trans_arr[b_row_offset + p + kk];
+                    c_value += A_arr[a_row_offset + (kk + 2)] * B_trans_arr[b_row_offset + p2 + kk];
+                    c_value += A_arr[a_row_offset + (kk + 3)] * B_trans_arr[b_row_offset + p3 + kk];
                 }
                 // Handle residual operations not handled by the loop unrolling
                 for (; kk < k_min; kk ++) {
                     // Updating a single element in C block
-                    C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
+                    c_value += A_arr[a_row_offset + kk] * B_trans_arr[b_row_offset + kk];
                 }
+                // Write back to memory
+                C_arr[c_index] = c_value;
             }
         }
     }
@@ -157,33 +181,34 @@ void* process_tasks(void* arg) {
     // Keep going until the Queue is empty (true due to mutex for Queue)
     while (true) {
 
+        Task t;
+        bool is_empty;
+
         // Lock the Queue with the mutex before accessing
         if (pthread_mutex_lock(&queue_lock) != 0) {
             perror("Error: Mutex lock failed");
             return NULL;
         }
 
-        Task t;
-        if (queue_is_empty(q)) {
-            // Queue is empty, unlock mutex and leave
-            if(pthread_mutex_unlock(&queue_lock) != 0) {
-                perror("Error: Mutex unlock failed");
-                return NULL;
-            }
-            break;
+        // Retrieve Queue data
+        is_empty = queue_is_empty(q);
+        if (!is_empty) {
+            t = queue_get(q);
         }
 
-        // Retreive the Task
-        t = queue_get(q);
-
-        // Unlock the Queue with the mutex to give access to other threads
-        if (pthread_mutex_unlock(&queue_lock) != 0) {
+        // Unlock the Queue
+        if(pthread_mutex_unlock(&queue_lock) != 0) {
             perror("Error: Mutex unlock failed");
             return NULL;
         }
 
-        // Perform Matrix multiplication with the Task
-        thread_mult(t);
+        if (is_empty) {
+            // Queue is empty, unlock mutex and leave
+            break;
+        } else {
+            // Perform Matrix multiplication with the Task
+            thread_mult(t);
+        }
     }
 
     return NULL;
@@ -230,6 +255,9 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t 
     // Create a Queue filled with all the tasks / blocks to calculate in C
     Queue* q = preprocessing(A, B, C, block_size);
 
+    // Retrieve a pointer to B_transposed so that it can be later freed
+    Matrix* B_trans = queue_peek(q).B_trans;
+
     // Initialize the mutex for the Queue
     pthread_mutex_init(&queue_lock, NULL);
 
@@ -274,6 +302,7 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t 
 
     // Free allocated memory
     free(q);
+    free(B_trans);
 
     // Destory the Queue mutex
     pthread_mutex_destroy(&queue_lock);

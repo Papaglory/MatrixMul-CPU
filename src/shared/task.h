@@ -7,7 +7,7 @@ typedef struct {
 
     // The matrices corresopnding to A x B = C.
     Matrix* A;
-    Matrix* B;
+    Matrix* B_trans;
     Matrix* C;
 
     // The block size to use (blocking method)
@@ -28,7 +28,7 @@ typedef struct {
  * @brief Create a Task object for matrices A x B  = C.
  *
  * @param A Matrix pointer.
- * @param B Matrix pointer.
+ * @param B_trans Matrix pointer.
  * @param C Matrix pointer.
  * @param block_size The size used in the blocking method.
  * @param c_row_start The row that represents the start of the row block in C.
@@ -38,7 +38,7 @@ typedef struct {
  *
  * @return The Task passed as value.
 */
-Task task_create(Matrix* A, Matrix* B, Matrix* C, size_t block_size,
+Task task_create(Matrix* A, Matrix* B_trans, Matrix* C, size_t block_size,
                  size_t C_row_start, size_t C_col_start,
                  size_t C_row_end, size_t C_col_end);
 
