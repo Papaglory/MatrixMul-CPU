@@ -10,7 +10,7 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_multi_profiling.c--------");
 
     // Benchmark parameters
-    const size_t BLOCK_SIZE = 32;
+    const size_t BLOCK_SIZE = 128;
     const double APPROXIMATION_THRESHOLD = 1e-9;
     const size_t NUM_THREADS = 16;
 

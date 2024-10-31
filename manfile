@@ -16,10 +16,10 @@ make
 rm $OUTPUT_FILE
 
 # Manually make the test file
-gcc -O3 -march=native -ffast-math -funroll-loops -fopenmp -pg -c $TEST_FILE -o build/$(basename $TEST_FILE .c).o
+gcc -O3 -mavx -march=native -fopt-info-vec -ffast-math -funroll-loops -fopenmp -c $TEST_FILE -o build/$(basename $TEST_FILE .c).o
 
 # Create a binary file consisting of the test file
-gcc -pg -g $(find ./build -name "*.o") -o $OUTPUT_FILE -lopenblas
+gcc -g $(find ./build -name "*.o") -o $OUTPUT_FILE -lopenblas
 chmod +x $OUTPUT_FILE
 
 # Run the test file

@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -g -Wall -O2
+CFLAGS = -Wall -O3 -mavx -march=native -fopt-info-vec -ffast-math -funroll-loops -fopenmp
 
 # Directories
 SRC_DIR = src

@@ -6,6 +6,8 @@
 #include "../shared/matrix.h"
 #include "../shared/queue.h"
 #include "../shared/matrix_utils.h"
+// For SIMD
+#include <immintrin.h>
 
 /**
  * @brief Helper function for matrix_multithread_mult(). It allocates a
@@ -133,34 +135,76 @@ void thread_mult(Task t) {
             size_t a_row_offset = ii * m;
             for (size_t jj = C_col_start; jj < C_col_end; jj++) {
 
-                // This loop handles the dot product (using loop unrolling)
+                // This loop handles the dot product (using SIMD)
                 size_t kk = k;
                 size_t c_index = ii * p + jj;
-                size_t b_row_offset = jj * p;
-                size_t p2 = p * 2;
-                size_t p3 = p * 3;
-                // Hint compiler to fetch from memory once
+                size_t b_row_offset = jj * m;
                 double c_value = C_arr[c_index];
-                for (; kk + 3 < k_min; kk += 4) {
-                    // Updating a single element in C block
-                    c_value += A_arr[a_row_offset + kk] * B_trans_arr[b_row_offset + kk];
-                    c_value += A_arr[a_row_offset + (kk + 1)] * B_trans_arr[b_row_offset + p + kk];
-                    c_value += A_arr[a_row_offset + (kk + 2)] * B_trans_arr[b_row_offset + p2 + kk];
-                    c_value += A_arr[a_row_offset + (kk + 3)] * B_trans_arr[b_row_offset + p3 + kk];
+
+                /*
+                 * Using AVX (256 bytes) registers to speed up the process (SIMD).
+                 * The code has been duplicated by three to be able to handle
+                 * a total of 12 doubles compared to 4 doubles for the single
+                 * case.
+                 * The implementation below follows these steps:
+                 * 1. Initialize the first AVX register to 0 (c_vec).
+                 * 2. Load 4 doubles from A into the second AVX register.
+                 * 3. Load 4 doubles from B into the third AVX register.
+                 * 4. Perform the multiplication and add the value to c_vec.
+                 * 5. Unwrap the c_vec value using an array.
+                 * 6. Add the elements of c_vec into a single value.
+                 */
+
+                // Initiate AVX registers to zero. These will act as holders
+                // containing the accumulation of the dot product for a single
+                // (ii,jj) cell in C when going over the block corresponding
+                // to k.
+                __m256d c_vec1 = _mm256_setzero_pd();
+                __m256d c_vec2 = _mm256_setzero_pd();
+                __m256d c_vec3 = _mm256_setzero_pd();
+
+                for (; kk + 11 < k_min; kk += 12) {
+
+                    // Load the 4 doubles from A starting from the address given
+                    // as function argument. A total of 12 doubles
+                    __m256d a_vals1 = _mm256_load_pd(&A_arr[a_row_offset + kk]);
+                    __m256d a_vals2 = _mm256_load_pd(&A_arr[a_row_offset + kk + 4]);
+                    __m256d a_vals3 = _mm256_load_pd(&A_arr[a_row_offset + kk + 8]);
+
+                    // Load the 4 doubles from B starting from the address given
+                    // as function argument. A total of 12 doubles
+                    __m256d b_vals1 = _mm256_load_pd(&B_trans_arr[b_row_offset + kk]);
+                    __m256d b_vals2 = _mm256_load_pd(&B_trans_arr[b_row_offset + kk + 4]);
+                    __m256d b_vals3 = _mm256_load_pd(&B_trans_arr[b_row_offset + kk + 8]);
+
+                    // Multiply the dot product between the A and B values
+                    // in the AVX registers and add the value to the
+                    // c_vecs.
+                    c_vec1 = _mm256_fmadd_pd(a_vals1, b_vals1, c_vec1);
+                    c_vec2 = _mm256_fmadd_pd(a_vals2, b_vals2, c_vec2);
+                    c_vec3 = _mm256_fmadd_pd(a_vals3, b_vals3, c_vec3);
                 }
-                // Handle residual operations not handled by the loop unrolling
-                for (; kk < k_min; kk ++) {
-                    // Updating a single element in C block
+
+                // Unwrap the c_vecs and sum up the elements in the vector
+                double temp1[4], temp2[4], temp3[4];
+                _mm256_store_pd(temp1, c_vec1);
+                _mm256_store_pd(temp2, c_vec2);
+                _mm256_store_pd(temp3, c_vec3);
+                c_value += temp1[0] + temp1[1] + temp1[2] + temp1[3];
+                c_value += temp2[0] + temp2[1] + temp2[2] + temp2[3];
+                c_value += temp3[0] + temp3[1] + temp3[2] + temp3[3];
+
+                // Handle residual operations not handled by the SIMD loop
+                for (; kk < k_min; kk++) {
                     c_value += A_arr[a_row_offset + kk] * B_trans_arr[b_row_offset + kk];
                 }
+
                 // Write back to memory
                 C_arr[c_index] = c_value;
             }
         }
     }
-}
-
-// Mutex lock used to access the Queue
+}// Mutex lock used to access the Queue
 pthread_mutex_t queue_lock;
 
 /**

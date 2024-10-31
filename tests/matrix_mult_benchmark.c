@@ -4,15 +4,16 @@
 #include <time.h>
 #include "../src/shared/matrix.h"
 #include "../src/cpu/matrix_multithread.h"
+#include "../src/cpu/matrix_singlethread.h"
 #include "../src/shared/matrix_utils.h"
 
 int main() {
 
-    printf("%s\n", "--------STARTING matrix_mult_multi_verification.c--------");
+    printf("%s\n", "--------STARTING matrix_mult_benchmark.c--------");
 
     // Benchmark parameters
     const size_t RUN_COUNT = 5;
-    const size_t BLOCK_SIZE = 16; // Does not matter since we only care about result
+    const size_t BLOCK_SIZE = 128; // Does not matter since we only care about result
     // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
     const size_t NUM_THREADS = 16;
@@ -114,7 +115,7 @@ int main() {
     }
 
     printf("%s\n", "All calculations are correct");
-    printf("%s\n", "--------FINISHED matrix_mult_multi_verification.c--------");
+    printf("%s\n", "--------FINISHED matrix_mult_benchmark.c--------");
 
     return 0;
 }

@@ -66,9 +66,6 @@ int main() {
             }
         }
 
-        Matrix* C_m = matrix_create_with(pattern_zero, NULL, n, p);
-        C_m->values = C_blas;
-
         // Free the allocated data corresponding to this run
         matrix_free(A);
         matrix_free(B);
