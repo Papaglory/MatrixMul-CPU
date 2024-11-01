@@ -167,15 +167,15 @@ void thread_mult(Task t) {
 
                     // Load the 4 doubles from A starting from the address given
                     // as function argument. A total of 12 doubles
-                    __m256d a_vals1 = _mm256_load_pd(&A_arr[a_row_offset + kk]);
-                    __m256d a_vals2 = _mm256_load_pd(&A_arr[a_row_offset + kk + 4]);
-                    __m256d a_vals3 = _mm256_load_pd(&A_arr[a_row_offset + kk + 8]);
+                    __m256d a_vals1 = _mm256_loadu_pd(&A_arr[a_row_offset + kk]);
+                    __m256d a_vals2 = _mm256_loadu_pd(&A_arr[a_row_offset + kk + 4]);
+                    __m256d a_vals3 = _mm256_loadu_pd(&A_arr[a_row_offset + kk + 8]);
 
                     // Load the 4 doubles from B starting from the address given
                     // as function argument. A total of 12 doubles
-                    __m256d b_vals1 = _mm256_load_pd(&B_trans_arr[b_row_offset + kk]);
-                    __m256d b_vals2 = _mm256_load_pd(&B_trans_arr[b_row_offset + kk + 4]);
-                    __m256d b_vals3 = _mm256_load_pd(&B_trans_arr[b_row_offset + kk + 8]);
+                    __m256d b_vals1 = _mm256_loadu_pd(&B_trans_arr[b_row_offset + kk]);
+                    __m256d b_vals2 = _mm256_loadu_pd(&B_trans_arr[b_row_offset + kk + 4]);
+                    __m256d b_vals3 = _mm256_loadu_pd(&B_trans_arr[b_row_offset + kk + 8]);
 
                     // Multiply the dot product between the A and B values
                     // in the AVX registers and add the value to the
@@ -260,6 +260,8 @@ void* process_tasks(void* arg) {
 }
 
 Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t NUM_THREADS) {
+
+    printf("num threads %zu\n", NUM_THREADS);
 
     if (!A || !B) {
         errno = EINVAL;

@@ -3,6 +3,7 @@
 #include <time.h>
 #include "../src/shared/matrix.h"
 #include "../src/cpu/matrix_multithread.h"
+#include "../src/cpu/matrix_singlethread.h"
 #include "../src/shared/matrix_utils.h"
 
 int main() {
@@ -15,8 +16,8 @@ int main() {
     const size_t NUM_THREADS = 16;
 
     // Matrix generation parameters
-    const double VALUES_MIN = -1e-9;
-    const double VALUES_MAX = 1e-9;
+    const double VALUES_MIN = -1e+9;
+    const double VALUES_MAX = 1e+9;
     const size_t DIMENSIONS_MIN = 3000;
     const size_t DIMENSIONS_MAX = 3000;
     const int seed = 100;
