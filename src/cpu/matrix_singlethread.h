@@ -36,9 +36,9 @@
 /**
  * @brief Matrix multiply the two matrices A and B. Matrix A is the
  * left-Matrix and Matrix B is the right-Matrix.
- * Assumes the number of columns in the first Matrix is equal
- * to the number of rows in the second Matrix.
- * The result is placed in a newly allocated Matrix.
+ *
+ * @note The result is placed in a newly allocated Matrix and the
+ * caller is responsible to free.
  *
  * @param A The first Matrix.
  * @param B The second Matrix.

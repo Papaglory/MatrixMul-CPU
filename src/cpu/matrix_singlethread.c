@@ -24,6 +24,13 @@ Matrix* matrix_singlethread_mult(Matrix* A, Matrix* B, size_t block_size) {
         return NULL;
     }
 
+    // Check if Matrix multiplication is valid given matrices A and B.
+    if (A->num_cols != B->num_rows) {
+        errno = EINVAL;
+        perror("Error: Matrices A and B are not fit for multiplication\n");
+        return NULL;
+    }
+
     size_t min_nm = min(n, m);
     if (block_size == 0) {
         errno = EINVAL;
