@@ -19,8 +19,8 @@ int main() {
     const size_t NUM_THREADS = 16;
 
     // Matrix generation parameters
-    const double VALUES_MIN = -1e-9;
-    const double VALUES_MAX = 1e-9;
+    const double VALUES_MIN = -1e+9;
+    const double VALUES_MAX = 1e+9;
     const size_t DIMENSIONS_MIN = 3000;
     const size_t DIMENSIONS_MAX = 3000;
     const int seed = 100;
@@ -92,13 +92,13 @@ int main() {
             if (fabs(C->values[j] - C_blas[j]) > APPROXIMATION_THRESHOLD) {
                 printf("Error: The matrix mult result differs!\n");
                 mismatch_detected = true;
+                printf("My implementation %f\n", C->values[j]);
+                printf("BLAS implementation %f\n", C_blas[j]);
+
                 matrix_free(A);
                 matrix_free(B);
                 matrix_free(C);
                 free(C_blas);
-
-                printf("My implementation %f\n", C->values[j]);
-                printf("BLAS implementation %f\n", C_blas[j]);
 
                 return 0;
             }

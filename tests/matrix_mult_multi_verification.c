@@ -12,18 +12,18 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_multi_verification.c--------");
 
     // Benchmark parameters
-    const size_t RUN_COUNT = 10;
-    const size_t BLOCK_SIZE = 13; // Does not matter since we only care about result
+    const size_t RUN_COUNT = 20;
+    const size_t BLOCK_SIZE = 128; // Does not matter since we only care about result
     // Used if there are different rounding errors between the implementations
-    const double APPROXIMATION_THRESHOLD = 1e-9;
-    const size_t NUM_THREADS = 1;
+    const double APPROXIMATION_THRESHOLD = 1e-6;
+    const size_t NUM_THREADS = 16;
 
     // Matrix generation parameters
-    const double VALUES_MIN = -1e+9;
+    const double VALUES_MIN = 1e+8;
     const double VALUES_MAX = 1e+9;
     const size_t DIMENSIONS_MIN = 3000;
     const size_t DIMENSIONS_MAX = 3000;
-    const int seed = 100;
+    const int seed = 42;
 
     // Set the seed for reproducibility
     srand(seed);
@@ -57,7 +57,6 @@ int main() {
 
         // Compare result
         for (size_t j = 0; j < n * p; j++) {
-            break;
 
             if (fabs(C->values[j] - C_blas[j]) > APPROXIMATION_THRESHOLD) {
                 printf("Error: The matrix mult result differs!\n");

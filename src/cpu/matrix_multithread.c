@@ -204,7 +204,9 @@ void thread_mult(Task t) {
             }
         }
     }
-}// Mutex lock used to access the Queue
+}
+
+// Mutex lock used to access the Queue
 pthread_mutex_t queue_lock;
 
 /**
