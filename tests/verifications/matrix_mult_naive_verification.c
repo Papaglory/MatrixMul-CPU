@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include "../src/shared/matrix.h"
-#include "../src/cpu/matrix_mult_naive.h"
-#include "../src/shared/matrix_utils.h"
+#include "../../src/shared/matrix.h"
+#include "../../src/cpu/matrix_mult_naive.h"
+#include "../../src/shared/matrix_utils.h"
 
 int main() {
 
@@ -12,10 +12,11 @@ int main() {
 
     // Benchmark parameters
     const size_t RUN_COUNT = 100;
+    // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
 
     // Matrix generation parameters
-    const double VALUES_MIN = 1e-6;
+    const double VALUES_MIN = -1e+6;
     const double VALUES_MAX = 1e+6;
     const size_t DIMENSIONS_MIN = 1000;
     const size_t DIMENSIONS_MAX = 1000;

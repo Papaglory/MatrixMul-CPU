@@ -1,5 +1,5 @@
-#include "../src/shared/matrix.h"
-#include "../src/cpu/matrix_singlethread.h"
+#include "../../src/shared/matrix.h"
+#include "../../src/cpu/matrix_singlethread.h"
 #include <stdio.h>
 
 int main() {

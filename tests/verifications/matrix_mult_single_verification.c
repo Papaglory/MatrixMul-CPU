@@ -2,23 +2,23 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include "../src/shared/matrix.h"
-#include "../src/cpu/matrix_singlethread.h"
-#include "../src/shared/matrix_utils.h"
+#include "../../src/shared/matrix.h"
+#include "../../src/cpu/matrix_singlethread.h"
+#include "../../src/shared/matrix_utils.h"
 
 int main() {
 
     printf("%s\n", "--------STARTING matrix_mult_single_verification.c--------");
 
     // Benchmark parameters
-    const int RUN_COUNT = 10;
+    const int RUN_COUNT = 100;
     const int BLOCK_SIZE = 1; // Does not matter since we only care about result
     // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
 
     // Matrix generation parameters
-    const double VALUES_MIN = -1e-9;
-    const double VALUES_MAX = 1e-9;
+    const double VALUES_MIN = -1e+6;
+    const double VALUES_MAX = 1e+6;
     const size_t DIMENSIONS_MIN = 1000;
     const size_t DIMENSIONS_MAX = 1000;
     const int seed = 42;
@@ -27,8 +27,9 @@ int main() {
     srand(seed);
 
     bool mismatch_detected = false;
-    double total_time = 0;
     for (size_t i = 0; i < RUN_COUNT; i++) {
+
+        printf("Iteration %zu\n", i);
 
         // Generate Matrix dimensions
         const size_t n = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);

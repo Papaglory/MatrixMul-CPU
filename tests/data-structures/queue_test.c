@@ -1,5 +1,5 @@
-#include "../src/shared/task.h"
-#include "../src/shared/queue.h"
+#include "../../src/shared/task.h"
+#include "../../src/shared/queue.h"
 #include <stdio.h>
 
 void print_stats(Queue* q) {

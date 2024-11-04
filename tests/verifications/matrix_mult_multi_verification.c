@@ -1,24 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../src/shared/matrix.h"
-#include "../src/cpu/matrix_multithread.h"
-#include "../src/shared/matrix_utils.h"
+#include "../../src/shared/matrix.h"
+#include "../../src/cpu/matrix_multithread.h"
+#include "../../src/shared/matrix_utils.h"
 
 int main() {
 
     printf("%s\n", "--------STARTING matrix_mult_multi_verification.c--------");
 
     // Benchmark parameters
-    const size_t RUN_COUNT = 20;
-    const size_t BLOCK_SIZE = 128; // Does not matter since we only care about result
+    const size_t RUN_COUNT = 100;
+    const size_t BLOCK_SIZE = 128;
     // Used if there are different rounding errors between the implementations
-    const double APPROXIMATION_THRESHOLD = 1e-6;
+    const double APPROXIMATION_THRESHOLD = 1e-9;
     const size_t NUM_THREADS = 16;
 
     // Matrix generation parameters
-    const double VALUES_MIN = 1e+8;
-    const double VALUES_MAX = 1e+9;
+    const double VALUES_MIN = -1e+6;
+    const double VALUES_MAX = 1e+6;
     const size_t DIMENSIONS_MIN = 3000;
     const size_t DIMENSIONS_MAX = 3000;
     const int seed = 42;

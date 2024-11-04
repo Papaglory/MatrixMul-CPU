@@ -7,6 +7,11 @@
  * found in matrix_multithread.c where we have a main thread that creates
  * threads that retrieves work from a Queue which corresponds to blocks
  * found in the Matrix that needs to be calculated.
+ *
+ * @note The ideas implemented here, such as an unique queue for each
+ * thread to reduce mutex overhead and the use of batching has been
+ * abandoned. This is due to profiling tools revealing that relatively
+ * few CPU cycles are used when utilizing the single shared Queue.
  */
 
 #include <pthread.h>
@@ -15,7 +20,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "../src/shared/queue.h"
+#include "../../src/shared/queue.h"
 
 typedef struct {
 

@@ -1,4 +1,4 @@
-#include "../src/shared/matrix.h"
+#include "../../src/shared/matrix.h"
 #include <stdio.h>
 #include <stdlib.h>
 

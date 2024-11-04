@@ -1,10 +1,17 @@
+/**
+ * @file matrix_mult_multi_profiling.c
+ *
+ * @brief Contains the minimum needed to create matrices A and B
+ * and perform Matrix multiplication. This reduces overhead and
+ * makes the profiling report simpler to read.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../src/shared/matrix.h"
-#include "../src/cpu/matrix_multithread.h"
-#include "../src/cpu/matrix_singlethread.h"
-#include "../src/shared/matrix_utils.h"
+#include "../../src/shared/matrix.h"
+#include "../../src/cpu/matrix_multithread.h"
+#include "../../src/shared/matrix_utils.h"
 
 int main() {
 
@@ -16,8 +23,8 @@ int main() {
     const size_t NUM_THREADS = 16;
 
     // Matrix generation parameters
-    const double VALUES_MIN = -1e+9;
-    const double VALUES_MAX = 1e+9;
+    const double VALUES_MIN = -1e+6;
+    const double VALUES_MAX = 1e+6;
     const size_t DIMENSIONS_MIN = 3000;
     const size_t DIMENSIONS_MAX = 3000;
     const int seed = 100;
@@ -50,7 +57,6 @@ int main() {
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     // Do multithread multiplication
-    //C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
     C = matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
 
     // End timer
