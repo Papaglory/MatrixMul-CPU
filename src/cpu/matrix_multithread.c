@@ -263,8 +263,6 @@ void* process_tasks(void* arg) {
 
 Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t NUM_THREADS) {
 
-    printf("num threads %zu\n", NUM_THREADS);
-
     if (!A || !B) {
         errno = EINVAL;
         perror("Error: Missing either Matrix A or Matrix B");
