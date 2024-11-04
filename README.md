@@ -1,1 +1,1 @@
-# MatrixMul-CPU-GPU
+# MatrixMul-CPU-Multithread
