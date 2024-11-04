@@ -94,6 +94,10 @@ Matrix* matrix_create_from_2D_array(
  * Furthermore, this function does not take ownership of values. The caller
  * is responsible for freeing the memory allocated for values.
  *
+ * The user is responsible for allocating an array on the heap using
+ * posix_memalign(), malloc() will still work but perhaps not optimal
+ * for large matrices.
+ *
  * @param num_rows The number of rows in the Matrix.
  * @param num_cols The number of columns in the Matrix.
  * @param values A pointer to the allocated array containing the

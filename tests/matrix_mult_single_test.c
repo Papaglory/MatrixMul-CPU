@@ -7,7 +7,7 @@ int main() {
     printf("%s\n", "--------STARTING matrix_mult_single_test.c--------");
 
     printf("%s\n", "Creating a Matrix from array on the stack");
-    int arr1[3][3] = {
+    double arr1[3][3] = {
         {1,3,2},
         {5,3,2},
         {1,0,1}
@@ -16,7 +16,7 @@ int main() {
     printf("%s\n", "Matrix1");
     matrix_print(m1);
 
-    int arr2[3][2] = {
+    double arr2[3][2] = {
         {1,0},
         {0,1},
         {0,0}

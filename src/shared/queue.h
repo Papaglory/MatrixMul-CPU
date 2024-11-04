@@ -53,6 +53,23 @@ int queue_add(Queue* q, Task t);
 Task queue_get(Queue* q);
 
 /**
+ * @brief Retrieve a batch of the tasks that start at the front of the Queue.
+ * If the Queue is empty, the empty_task is returned
+ * (Task empty_task = {0}).
+ *
+ * @note The caller is responsible for freeing the batch array.
+ *
+ * @param q The Queue to retrieve the tasks from.
+ * @param batch_size A pointer to the batch size. If the batch size is
+ * larger than the Queue size, the function will alter this parameter
+ * to inform the caller that the batch size has been changed.
+ * @return A pointer to an array on the heap with the tasks. If the number
+ * of tasks in the Queue is smaller than the batch size, the remaining tasks
+ * will be placed in the returning array. NULL if an error occured.
+*/
+Task* queue_get_batch(Queue* q, size_t* batch_size);
+
+/**
  * @brief Retrieve the Task that is at the front of the Queue
  * without deleting the Task from the Queue.
  * If the Queue is empty, the empty_task is returned
