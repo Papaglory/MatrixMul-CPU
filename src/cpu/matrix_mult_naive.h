@@ -18,9 +18,9 @@
  *
  * @note Matrix C must be pre-allocated by the caller.
  *
- * @param A Pointer to the first input matrix (dimensions n x m).
- * @param B Pointer to the second input matrix (dimensions m x p).
- * @param C Pointer to the output matrix (dimensions n x p) where
+ * @param A Pointer to the first input Matrix (dimensions n x m).
+ * @param B Pointer to the second input Matrix (dimensions m x p).
+ * @param C Pointer to the output Matrix (dimensions n x p) where
  * the result will be stored.
  */
 void matrix_mult_naive(Matrix* A, Matrix* B, Matrix* C);
