@@ -23,7 +23,7 @@ long random_between(long min, long max);
  * @param NUM_COLS The maximum possible number of columns the generated
  * Matrix can have.
  *
- * @return A pointer to the generated Matrix.
+ * @return A pointer to the generated Matrix, NULL if an error occured.
  */
 Matrix* generate_matrix(long VALUES_MIN, long VALUES_MAX,
                         size_t NUM_ROWS, size_t NUM_COLS);
@@ -37,8 +37,10 @@ Matrix* generate_matrix(long VALUES_MIN, long VALUES_MAX,
  * @param n The row dimension of A and C.
  * @param m The column dimension of A and row dimension of B.
  * @param p The column dimension of B and C.
+ *
+ * @return Returns 0 for success and -1 if an error occurred.
  */
-void matrix_mult_openblas(double *A, double *B, double *C, size_t n, size_t m, size_t p);
+int matrix_mult_openblas(double *A, double *B, double *C, size_t n, size_t m, size_t p);
 
 /**
  * @brief Determines the smallest of the two input integer values.
