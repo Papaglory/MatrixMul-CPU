@@ -3,12 +3,12 @@
 #include <errno.h>
 #include "matrix_mult_naive.h"
 
-Matrix* matrix_mult_naive(Matrix* A, Matrix* B) {
+void matrix_mult_naive(Matrix* A, Matrix* B, Matrix* C) {
 
-    if (!A || !B) {
+    if (!A || !B || !C) {
         errno = EINVAL;
-        perror("Error: Missing either Matrix A or Matrix B");
-        return NULL;
+        perror("Error: Missing either Matrix A, B or Matrix C");
+        return;
     }
 
     // Extract Matrix dimensions
@@ -19,15 +19,16 @@ Matrix* matrix_mult_naive(Matrix* A, Matrix* B) {
     if (n == 0 || m == 0 || p == 0) {
         errno = EINVAL;
         perror("Error: At least one of the dimensions (n, m or p) are 0");
-        return NULL;
+        return;
     }
 
-    // Instantiate Matrix C
-    Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
-    if (!C) {
+    // Check if Matrix multiplication is valid given matrices
+    if (A->num_cols != B->num_rows ||
+        C->num_rows != A->num_rows ||
+        C->num_cols != B->num_cols) {
         errno = EINVAL;
-        perror("Error: Unable to allocate memory for Matrix C");
-        return NULL;
+        perror("Error: Matrix dimensions are not valid for multiplication\n");
+        return;
     }
 
     // retrieve internal Matrix arrays
@@ -44,7 +45,4 @@ Matrix* matrix_mult_naive(Matrix* A, Matrix* B) {
             }
         }
     }
-
-    // Return the result
-    return C;
 }

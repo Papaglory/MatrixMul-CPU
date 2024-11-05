@@ -40,11 +40,14 @@ int main() {
         Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
         Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
 
+        // Allocate C Matrix
+        Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
+
         // openBLAS requires the resulting C array as well as argument
         double* C_blas = (double*)malloc(sizeof(double) * n * p);
 
         // Do the matrix multiplications
-        Matrix* C = matrix_singlethread_mult(A, B, 1);
+        matrix_singlethread_mult(A, B, C, 1);
         matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
 
         // Compare result

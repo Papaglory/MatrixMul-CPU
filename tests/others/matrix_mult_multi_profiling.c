@@ -50,14 +50,14 @@ int main() {
     Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
     Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
 
-    // Do the matrix multiplications
-    Matrix* C = NULL;
+    // Allocate C Matrix
+    Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
 
     // Start timer
     clock_gettime(CLOCK_MONOTONIC, &start);
 
     // Do multithread multiplication
-    C = matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
+    matrix_multithread_mult(A, B, C, BLOCK_SIZE, NUM_THREADS);
 
     // End timer
     clock_gettime(CLOCK_MONOTONIC, &end);

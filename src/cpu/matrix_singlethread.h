@@ -37,15 +37,14 @@
  * @brief Matrix multiply the two matrices A and B. Matrix A is the
  * left-Matrix and Matrix B is the right-Matrix.
  *
- * @note The result is placed in a newly allocated Matrix and the
- * caller is responsible to free.
+ * @note Matrix C must be pre-allocated by the caller.
  *
- * @param A The first Matrix.
- * @param B The second Matrix.
+ * @param A Pointer to the first input Matrix (dimensions n x m).
+ * @param B Pointer to the second input Matrix (dimensions m x p).
+ * @param C Pointer to the output Matrix (dimensions n x p) where
+ * the result will be stored.
  * @param block_size The block size used in the blocking / tiling method.
- * @return A pointer to a newly alloced Matrix which contains the result
- * of the multiplication. Returns NULL if an error occured.
 */
-Matrix* matrix_singlethread_mult(Matrix* A, Matrix* B, size_t block_size);
+void matrix_singlethread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size);
 
 #endif //MATRIX_SINGLETHREAD_H

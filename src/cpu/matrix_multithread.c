@@ -261,12 +261,12 @@ void* process_tasks(void* arg) {
     return NULL;
 }
 
-Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t NUM_THREADS) {
+void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size, size_t NUM_THREADS) {
 
-    if (!A || !B) {
+    if (!A || !B || !C) {
         errno = EINVAL;
-        perror("Error: Missing either Matrix A or Matrix B");
-        return NULL;
+        perror("Error: Missing either Matrix A, B or Matrix C");
+        return;
     }
 
     // Extract Matrix dimensions
@@ -277,34 +277,28 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t 
     if (n == 0 || m == 0 || p == 0) {
         errno = EINVAL;
         perror("Error: At least one of the dimensions (n, m or p) are 0");
-        return NULL;
+        return;
     }
 
-    // Check if Matrix multiplication is valid given matrices A and B.
-    if (A->num_cols != B->num_rows) {
+    // Check if Matrix multiplication is valid given matrices
+    if (A->num_cols != B->num_rows ||
+        C->num_rows != A->num_rows ||
+        C->num_cols != B->num_cols) {
         errno = EINVAL;
-        perror("Error: Matrices A and B are not fit for multiplication\n");
-        return NULL;
+        perror("Error: Matrix dimensions are not valid for multiplication\n");
+        return;
     }
 
     size_t min_nm = min(n, m);
     if (block_size == 0) {
         errno = EINVAL;
         perror("Error: Block size cannot be of value 0");
-        return NULL;
+        return;
     }
 
     // Check if the block size needs to be adjusted for smaller matrices
     size_t smallest_dimension = min(min_nm, p);
     block_size = (block_size > smallest_dimension) ? smallest_dimension : block_size;
-
-    // Instantiate Matrix C
-    Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
-    if (!C) {
-        errno = EINVAL;
-        perror("Error: Unable to allocate memory for Matrix C");
-        return NULL;
-    }
 
     // Create a Queue filled with all the tasks / blocks to calculate in C
     Queue* q = preprocessing(A, B, C, block_size);
@@ -337,7 +331,7 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t 
                 perror("Error: Destorying queue_lock mutex failed");
             }
 
-            return NULL;
+            return;
         }
     }
 
@@ -350,7 +344,7 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t 
             free(q);
             pthread_mutex_destroy(&queue_lock);
             free(C);
-            return NULL;
+            return;
         }
     }
 
@@ -360,7 +354,5 @@ Matrix* matrix_multithread_mult(Matrix* A, Matrix* B, size_t block_size, size_t 
 
     // Destory the Queue mutex
     pthread_mutex_destroy(&queue_lock);
-
-    // Return the result
-    return C;
 }
+

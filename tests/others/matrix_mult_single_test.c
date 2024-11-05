@@ -25,9 +25,12 @@ int main() {
     Matrix* m2 = matrix_create_from_2D_array(3, 2, arr2);
     matrix_print(m2);
 
+    // Allocate result Matrix
+    Matrix* result = matrix_create_with(pattern_zero, NULL, 3, 2);
+
     size_t block_size = 1;
     printf("%s\n", "Calling matrix mult");
-    Matrix* result = matrix_singlethread_mult(m1, m2, block_size);
+    matrix_singlethread_mult(m1, m2, result, block_size);
     matrix_print(result);
 
     return 0;

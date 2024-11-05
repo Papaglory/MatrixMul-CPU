@@ -23,8 +23,9 @@ void warm_up(const size_t WARM_UP_COUNT) {
 }
 
 
-Matrix* run_algorithm(Algorithm algo, Matrix* A, Matrix* B, double* C_blas,
-                      const size_t BLOCK_SIZE, const size_t NUM_THREADS,
+void run_algorithm(Algorithm algo, Matrix* A, Matrix* B, Matrix* C,
+                      double* C_blas, const size_t BLOCK_SIZE,
+                      const size_t NUM_THREADS,
                       const size_t n, const size_t m, const size_t p) {
 
     switch (algo) {
@@ -32,21 +33,19 @@ Matrix* run_algorithm(Algorithm algo, Matrix* A, Matrix* B, double* C_blas,
             matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
             break;
         case NAIVE:
-            matrix_mult_naive(A, B);
+            matrix_mult_naive(A, B, C);
             break;
         case SINGLETHREAD:
-            matrix_singlethread_mult(A, B, BLOCK_SIZE);
+            matrix_singlethread_mult(A, B, C, BLOCK_SIZE);
             break;
         case MULTITHREAD:
-            matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
+            matrix_multithread_mult(A, B, C, BLOCK_SIZE, NUM_THREADS);
             break;
         case MULTITHREAD_9AVX:
             // TODO separate multithread and _9AVX somehow
-            matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
+            matrix_multithread_mult(A, B, C, BLOCK_SIZE, NUM_THREADS);
             break;
     }
-
-    return NULL;
 }
 
 

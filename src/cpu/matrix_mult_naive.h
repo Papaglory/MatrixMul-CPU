@@ -12,6 +12,17 @@
 
 #include "../shared/matrix.h"
 
-Matrix* matrix_mult_naive(Matrix* A, Matrix* B);
+/**
+ * @brief Performs naive matrix multiplication on matrices A and B,
+ * storing the result in matrix C.
+ *
+ * @note Matrix C must be pre-allocated by the caller.
+ *
+ * @param A Pointer to the first input matrix (dimensions n x m).
+ * @param B Pointer to the second input matrix (dimensions m x p).
+ * @param C Pointer to the output matrix (dimensions n x p) where
+ * the result will be stored.
+ */
+void matrix_mult_naive(Matrix* A, Matrix* B, Matrix* C);
 
 #endif // MATRIX_MULT_NAIVE_H

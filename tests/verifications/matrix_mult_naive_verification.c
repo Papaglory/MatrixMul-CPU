@@ -38,9 +38,11 @@ int main() {
         Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
         Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
 
-        // Do naive multiplication
-        Matrix* C = NULL;
-        C = matrix_mult_naive(A, B);
+        // Allocate C Matrix
+        Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
+
+        // Perform multiplication
+        matrix_mult_naive(A, B, C);
 
         // openBLAS requires the resulting C array as well as argument
         double* C_blas = (double*)malloc(sizeof(double) * n * p);

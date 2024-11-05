@@ -39,9 +39,11 @@ int main() {
         Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
         Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
 
+        // Allocate C Matrix
+        Matrix* C = matrix_create_with(pattern_zero, NULL, n, p);
+
         // Do multithread multiplication
-        Matrix* C = NULL;
-        C = matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
+        matrix_multithread_mult(A, B, C, BLOCK_SIZE, NUM_THREADS);
 
         // openBLAS requires the resulting C array as well as argument
         double* C_blas = (double*)malloc(sizeof(double) * n * p);
