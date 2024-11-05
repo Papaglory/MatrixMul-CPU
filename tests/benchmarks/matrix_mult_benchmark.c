@@ -3,17 +3,61 @@
 #include <math.h>
 #include <time.h>
 #include "../../src/shared/matrix.h"
+#include "../../src/cpu/matrix_mult_naive.h"
 #include "../../src/cpu/matrix_multithread.h"
 #include "../../src/cpu/matrix_singlethread.h"
 #include "../../src/shared/matrix_utils.h"
+
+// Algorithms that will be tested
+typedef enum {
+    BLAS,
+    NAIVE,
+    SINGLETHREAD,
+    MULTITHREAD,
+    MULTITHREAD_9AVX
+} Algorithm;
+
+void warm_up(const size_t WARM_UP_COUNT) {
+
+
+}
+
+
+Matrix* run_algorithm(Algorithm algo, Matrix* A, Matrix* B, double* C_blas,
+                      const size_t BLOCK_SIZE, const size_t NUM_THREADS,
+                      const size_t n, const size_t m, const size_t p) {
+
+    switch (algo) {
+        case BLAS:
+            matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
+            break;
+        case NAIVE:
+            matrix_mult_naive(A, B);
+            break;
+        case SINGLETHREAD:
+            matrix_singlethread_mult(A, B, BLOCK_SIZE);
+            break;
+        case MULTITHREAD:
+            matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
+            break;
+        case MULTITHREAD_9AVX:
+            // TODO separate multithread and _9AVX somehow
+            matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
+            break;
+    }
+
+    return NULL;
+}
+
 
 int main() {
 
     printf("%s\n", "--------STARTING matrix_mult_benchmark.c--------");
 
     // Benchmark parameters
-    const size_t RUN_COUNT = 5;
-    const size_t BLOCK_SIZE = 128; // Does not matter since we only care about result
+    const size_t RUN_COUNT = 10;
+    const size_t WARM_UP_COUNT = 10;
+    const size_t BLOCK_SIZE = 128;
     // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
     const size_t NUM_THREADS = 16;
@@ -23,7 +67,8 @@ int main() {
     const double VALUES_MAX = 1e+6;
     const size_t DIMENSIONS_MIN = 3000;
     const size_t DIMENSIONS_MAX = 3000;
-    const int seed = 100;
+    const int seed = 42;
+    const bool compare_to_BLAS = false;
 
     // Set the seed for reproducibility
     srand(seed);
@@ -33,10 +78,14 @@ int main() {
     double elapsed_time_multi = 0;
     double elapsed_time_single = 0;
 
+    // Perform the warm-up
+    warm_up(WARM_UP_COUNT);
+
     bool mismatch_detected = true;
     double total_time = 0;
     for (size_t i = 0; i < RUN_COUNT; i++) {
-        printf("\n");
+
+        printf("%s %zu\n", "Iteration", i);
 
         // Generate Matrix dimensions
         const size_t n = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
@@ -56,8 +105,7 @@ int main() {
         // Start timer
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        // Do single thread multiplication
-        matrix_mult_openblas(A->values, B->values, C_blas, n, m, p);
+        // Perform multiplication
 
         // End timer
         clock_gettime(CLOCK_MONOTONIC, &end);
@@ -66,25 +114,6 @@ int main() {
         elapsed_time_multi = (end.tv_sec - start.tv_sec) +
             (end.tv_nsec - start.tv_nsec) / 1e9;
         printf("%-35s %f\n", "MULTI Elapsed time:", elapsed_time_multi);
-
-        // Start timer
-        clock_gettime(CLOCK_MONOTONIC, &start);
-
-        // Do multithread multiplication
-        //C = matrix_singlethread_mult(A, B, BLOCK_SIZE);
-        C = matrix_multithread_mult(A, B, BLOCK_SIZE, NUM_THREADS);
-
-        // End timer
-        clock_gettime(CLOCK_MONOTONIC, &end);
-
-        // Calculate elapsed time in seconds
-        elapsed_time_single = (end.tv_sec - start.tv_sec) +
-            (end.tv_nsec - start.tv_nsec) / 1e9;
-        printf("%-35s %f\n", "SINGLE Elapsed time:", elapsed_time_single);
-
-        // Print the improvement using multithread
-        printf("%s %.0f%s\n", "Multithread improvement", elapsed_time_single / elapsed_time_multi * 100, "%");
-
 
         // Compare result
         for (size_t j = 0; j < n * p; j++) {

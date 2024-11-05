@@ -29,10 +29,7 @@
 #include <stdbool.h>
 
 typedef struct {
-    /**
-     * A pointer pointing to the double values on the heap.
-     * TODO consider making it immutable.
-    */
+    // A pointer pointing to the double values on the heap.
     double* values;
 
     // The number of rows in the Matrix
