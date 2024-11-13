@@ -27,8 +27,8 @@
  * see matrix_multithread.h.
  */
 
-#ifndef MATRIX_MULTITHREAD_H
-#define MATRIX_MULTITHREAD_H
+#ifndef MATRIX_MULTITHREAD_9AVX_H
+#define MATRIX_MULTITHREAD_9AVX_H
 
 #include "../shared/matrix.h"
 
@@ -45,6 +45,6 @@
  * @param block_size The block size used in the blocking / tiling method.
  * @param NUM_THREADS The number of threads to utilize.
 */
-void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size, size_t NUM_THREADS);
+void matrix_multithread_mult_9avx(Matrix* A, Matrix* B, Matrix* C, size_t block_size, size_t NUM_THREADS);
 
-#endif // MATRIX_MULTITHREAD_H
+#endif // MATRIX_MULTITHREAD_9AVX_H

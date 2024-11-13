@@ -1,13 +1,16 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include "../../src/shared/matrix.h"
 #include "../../src/cpu/matrix_mult_naive.h"
 #include "../../src/cpu/matrix_multithread.h"
+#include "../../src/cpu/matrix_multithread_9avx.h"
 #include "../../src/cpu/matrix_singlethread.h"
 #include "../../src/shared/matrix_utils.h"
 
-// Algorithms that will be tested
+// Algorithms to be tested
 typedef enum {
     BLAS = 0, // = 0 to be able to loop through enums
     NAIVE,
@@ -56,8 +59,7 @@ void run_algorithm(Algorithm algo, Matrix* A, Matrix* B, Matrix* C,
             matrix_multithread_mult(A, B, C, BLOCK_SIZE, NUM_THREADS);
             break;
         case MULTITHREAD_9AVX:
-            // TODO separate multithread and _9AVX somehow
-            matrix_multithread_mult(A, B, C, BLOCK_SIZE, NUM_THREADS);
+            matrix_multithread_mult_9avx(A, B, C, BLOCK_SIZE, NUM_THREADS);
             break;
     }
 }
@@ -83,7 +85,7 @@ void run_algorithm(Algorithm algo, Matrix* A, Matrix* B, Matrix* C,
  */
 int warm_up(size_t WARM_UP_COUNT, Algorithm algo,
              const size_t DIMENSIONS_MIN, const size_t DIMENSIONS_MAX,
-             const size_t VALUES_MIN, const size_t VALUES_MAX,
+             const double VALUES_MIN, const double VALUES_MAX,
              const size_t BLOCK_SIZE, const size_t NUM_THREADS) {
 
     Matrix* C = NULL;
@@ -101,10 +103,10 @@ int warm_up(size_t WARM_UP_COUNT, Algorithm algo,
         Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
         Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
         if (!A || !B) {
-            perror("Error generate_matrix() failed in warm_up\n");
+            fprintf(stderr, "Error generate_matrix() failed in warm_up\n");
             matrix_free(A);
             matrix_free(B);
-            return -1;
+            return 1;
         }
 
         // Create result matrices (one for this and BLAS implementation)
@@ -112,19 +114,19 @@ int warm_up(size_t WARM_UP_COUNT, Algorithm algo,
             C_blas = NULL;
             C = matrix_create_with(pattern_zero, NULL, n, p);
             if (!C) {
-                perror("Error: matrix_create_with() failed for warm-up\n");
+                fprintf(stderr, "Error: matrix_create_with() failed for warm-up\n");
                 matrix_free(A);
                 matrix_free(B);
-                return -1;
+                return 1;
             }
         } else {
             C = NULL;
             C_blas = (double*)malloc(sizeof(double) * n * p);
             if (!C_blas) {
-                perror("Error: Allocation of C_blas failed for warm-up\n");
+                fprintf(stderr, "Error: Allocation of C_blas failed for warm-up\n");
                 matrix_free(A);
                 matrix_free(B);
-                return -1;
+                return 1;
             }
         }
 
@@ -144,7 +146,70 @@ int warm_up(size_t WARM_UP_COUNT, Algorithm algo,
     return 0;
 }
 
-int main() {
+/**
+ * @brief Determine if the input string str is a digit.
+ *
+ * @param str The string under consideration.
+ * @return 0 for containing a digit, else 1 for a non-digit string.
+ */
+int is_integer(const char str[]) {
+
+    // Check that it is not the empty string
+    if (*str == '\0') { return 1; }
+
+    // Increment if the first character is a sign
+    if (*str == '+' || *str == '-') { str++; }
+
+    // Check that there is at least one character after the sign
+    if (*str == '\0') { return 1; }
+
+    // Make sure every character is a digit
+    while (*str != '\0') {
+        if (!isdigit(*str)) { return 1; }
+        str++;
+    }
+
+    return 0;
+}
+
+int main(int argc, char* argv[]) {
+
+    // Check for input algorithm existence
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s <Algorithm> <Dimension_Size> <Seed>\n%s\n", argv[0], "Algorithm Options:\nBLAS\nNAIVE\nSINGLETHREAD\nMULTITHREAD\nMULTITHREAD_9AVX\nContent is stored in benchmark_time.txt");
+        return 1;
+    }
+
+    // Retrieve input algorithm
+    Algorithm algo;
+    if (strcmp(argv[1], "BLAS") == 0) {
+        algo = BLAS;
+    } else if (strcmp(argv[1], "NAIVE") == 0) {
+        algo = NAIVE;
+    } else if (strcmp(argv[1], "SINGLETHREAD") == 0) {
+        algo = SINGLETHREAD;
+    } else if (strcmp(argv[1], "MULTITHREAD") == 0) {
+        algo = MULTITHREAD;
+    } else if (strcmp(argv[1], "MULTITHREAD_9AVX") == 0) {
+        algo = MULTITHREAD_9AVX;
+    } else {
+        // No valid algorithm was given as input
+        fprintf(stderr, "Invalid algorithm inputted\n");
+        return 1;
+    }
+
+    // Retrieve input dimension and seed
+    if (is_integer(argv[2]) != 0 || is_integer(argv[3]) != 0) {
+        fprintf(stderr, "%s\n", "Error: Input dimension or seed is not a valid integer string");
+        return 1;
+    }
+    const size_t DIMENSION_SIZE = atoi(argv[2]);
+    if (DIMENSION_SIZE == 0) {
+        fprintf(stderr, "%s\n", "Error: The dimension size has to be non-zero");
+        return 1;
+    }
+    const size_t SEED = atoi(argv[3]);
+
 
     printf("%s\n", "--------STARTING matrix_mult_benchmark.c--------");
 
@@ -152,17 +217,15 @@ int main() {
     const size_t RUN_COUNT = 10;
     const size_t WARM_UP_COUNT = 10;
     const size_t BLOCK_SIZE = 128;
-    // Used if there are different rounding errors between the implementations
-    const double APPROXIMATION_THRESHOLD = 1e-9;
     const size_t NUM_THREADS = 16;
+    const char filename[] = "benchmark_time.txt";
 
     // Matrix generation parameters
     const double VALUES_MIN = -1e+6;
     const double VALUES_MAX = 1e+6;
-    const size_t DIMENSIONS_MIN = 3000;
-    const size_t DIMENSIONS_MAX = 3000;
-    const int seed = 42;
-    const bool compare_to_BLAS = false;
+    const size_t DIMENSIONS_MIN = DIMENSION_SIZE;
+    const size_t DIMENSIONS_MAX = DIMENSION_SIZE;
+    const int seed = SEED;
 
     // Set the seed for reproducibility
     srand(seed);
@@ -184,92 +247,93 @@ int main() {
     Matrix* C = NULL;
     double* C_blas = NULL;
 
-    // Perform the benchmark on each algorithm
-    for (size_t i = 0; i <= MULTITHREAD_9AVX; i++) {
+    // Perform the warm-up
+    printf("%s\n", "Performing warm-up...");
+    int result = warm_up(WARM_UP_COUNT, algo, DIMENSIONS_MIN, DIMENSIONS_MAX, VALUES_MIN, VALUES_MAX, BLOCK_SIZE, NUM_THREADS);
+    if (result != 0) {
+        fprintf(stderr, "Warm-up has failed\n");
+        return 1;
+    }
 
-        // Retrieve algorithm
-        Algorithm algo = (Algorithm)i;
+    double total_time = 0;
 
-        // Perform the warm-up
-        int result = warm_up(WARM_UP_COUNT, algo, DIMENSIONS_MIN, DIMENSIONS_MAX, VALUES_MIN, VALUES_MAX, BLOCK_SIZE, NUM_THREADS);
-        if (result != 0) {
-            perror("Error: Warm-up has failed\n");
-            return -1;
-        }
+    // Run the benchmark
+    printf("%s\n", "Performing benchmark...");
+    for (size_t i = 0; i < RUN_COUNT; i++) {
 
-        bool mismatch_detected = true;
-        double total_time = 0;
+        printf("%s %s. %s %zu\n", "Algorithm", ALGORITHM_NAMES[algo], "Iteration", i);
 
-        // Run the benchmark
-        for (size_t i = 0; i < RUN_COUNT; i++) {
+        // Generate Matrix dimensions
+        const size_t n = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
+        const size_t m = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
+        const size_t p = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
 
-            printf("%s %s. %s %zu\n", "Algorithm", ALGORITHM_NAMES[algo], "Iteration", i);
-
-            // Generate Matrix dimensions
-            const size_t n = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
-            const size_t m = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
-            const size_t p = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
-
-            // Generate matrices
-            Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
-            Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
-            if (!A || !B) {
-                perror("Error generate_matrix() failed in benchmark\n");
-                matrix_free(A);
-                matrix_free(B);
-                return -1;
-            }
-
-            // Create result matrices (one for this and BLAS implementation)
-            if (algo != BLAS) {
-                C_blas = NULL;
-                C = matrix_create_with(pattern_zero, NULL, n, p);
-                if (!C) {
-                    perror("Error: matrix_create_with() failed for benchmark\n");
-                    matrix_free(A);
-                    matrix_free(B);
-                    return -1;
-                }
-            } else {
-                C = NULL;
-                C_blas = (double*)malloc(sizeof(double) * n * p);
-                if (!C_blas) {
-                    perror("Error: Allocation of C_blas failed for benchmark\n");
-                    matrix_free(A);
-                    matrix_free(B);
-                    return -1;
-                }
-            }
-
-            // Start timer
-            clock_gettime(CLOCK_MONOTONIC, &start);
-
-            // Perform the Matrix multiplication
-            run_algorithm(algo, A, B, C, C_blas, BLOCK_SIZE, NUM_THREADS, n, m, p);
-
-            // End timer
-            clock_gettime(CLOCK_MONOTONIC, &end);
-
-            // Calculate elapsed time in seconds and accumulate
-            elapsed_time = (end.tv_sec - start.tv_sec) +
-                (end.tv_nsec - start.tv_nsec) / 1e9;
-            total_time += elapsed_time;
-
-            // Free the generated matrices
+        // Generate matrices
+        Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
+        Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
+        if (!A || !B) {
+            fprintf(stderr, "Error generate_matrix() failed in benchmark\n");
             matrix_free(A);
             matrix_free(B);
-            if (algo != BLAS) {
-                matrix_free(C);
-            } else {
-                free(C_blas);
+            return 1;
+        }
+
+        // Create result matrices (one for this and BLAS implementation)
+        if (algo != BLAS) {
+            C_blas = NULL;
+            C = matrix_create_with(pattern_zero, NULL, n, p);
+            if (!C) {
+                fprintf(stderr, "Error: matrix_create_with() failed for benchmark\n");
+                matrix_free(A);
+                matrix_free(B);
+                return 1;
             }
-        } // End of single benchmark
+        } else {
+            C = NULL;
+            C_blas = (double*)malloc(sizeof(double) * n * p);
+            if (!C_blas) {
+                fprintf(stderr, "Error: Allocation of C_blas failed for benchmark\n");
+                matrix_free(A);
+                matrix_free(B);
+                return 1;
+            }
+        }
 
-        // Calculate average time
-        double average_time = total_time / RUN_COUNT;
+        // Start timer
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
-        // TODO write time to file
+        // Perform the Matrix multiplication
+        run_algorithm(algo, A, B, C, C_blas, BLOCK_SIZE, NUM_THREADS, n, m, p);
+
+        // End timer
+        clock_gettime(CLOCK_MONOTONIC, &end);
+
+        // Calculate elapsed time in seconds and accumulate
+        elapsed_time = (end.tv_sec - start.tv_sec) +
+            (end.tv_nsec - start.tv_nsec) / 1e9;
+        total_time += elapsed_time;
+
+        // Free the generated matrices
+        matrix_free(A);
+        matrix_free(B);
+        if (algo != BLAS) {
+            matrix_free(C);
+        } else {
+            free(C_blas);
+        }
     }
+
+   // Calculate average time
+    double average_time = total_time / RUN_COUNT;
+    printf("%s %f\n", "average time", average_time);
+
+    FILE* file = fopen(filename, "w");
+    if (!file) {
+        fprintf(stderr, "Error: Opening file for storing time failed\n");
+        return 1;
+    }
+    fprintf(file, "%f\n", average_time);
+    fclose(file);
 
     printf("%s\n", "--------FINISHED matrix_mult_benchmark.c--------");
 
