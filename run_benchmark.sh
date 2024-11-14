@@ -3,7 +3,7 @@
 # Note: Make sure to run the manfile in the root directory with matrix_mult_benchmark.c.
 
 # Filename to store the benchmark data in
-filename="benchmark_results.csv"
+filename="benchmark/benchmark_results.csv"
 time_filename="benchmark_time.txt"
 
 # Add the headers / categories into the start of the CSV file.
@@ -26,13 +26,16 @@ seed=27
 for dimension in "${dimensions[@]}"; do
     for algo in "${algorithms[@]}"; do
 
+        # Newline
+        echo ""
+
         # Compile and link the code to create benchmark program
         echo "Compiling and linking $algo..."
         ./manfile > /dev/null 2>&1
 
         # Run the benchmark program
         echo "Benchmarking $algo with dimension size of $dimension..."
-        ./test $algo $dimension $seed
+        ./program $algo $dimension $seed 1 # 1 for using warm-up
 
         # Retrieve average execution time
         avg_time=0
@@ -47,7 +50,8 @@ for dimension in "${dimensions[@]}"; do
         metrics="cycles,instructions,cache-misses,cache-references"
 
         # Run perf and generate perf_report.txt file
-        perf stat -o perf_report.txt -e $metrics ./test $algo $dimension $seed > /dev/null
+        echo "Generate perf report and metrics..."
+        perf stat -o perf_report.txt -e $metrics ./program $algo $dimension $seed 0 > /dev/null
 
         # Extract the metrics
         cycles=$(cat perf_report.txt | grep "cycles" | awk -F ' ' '{print $1}' | tr -d ',' | tr -d ' ')
@@ -74,4 +78,4 @@ rm $time_filename
 rm perf_report.txt
 
 # Print the final result
-cat benchmark_results.csv
+cat "$filename"

@@ -5,8 +5,8 @@
 # bash script to create the test executables.
 
 # Make variable names for the test file
-TEST_FILE="tests/benchmark/matrix_mult_benchmark.c"
-OUTPUT_FILE="test"
+TEST_FILE="benchmark/matrix_mult_benchmark.c"
+OUTPUT_FILE="program"
 
 # Clean and make a new build using make
 make clean
@@ -21,6 +21,3 @@ gcc -O3 -mavx -march=native -funroll-loops -fopenmp -c $TEST_FILE -o build/$(bas
 # Create a binary file consisting of the test file
 gcc -g $(find ./build -name "*.o") -o $OUTPUT_FILE -lopenblas
 chmod +x $OUTPUT_FILE
-
-# Run the test file
-./test

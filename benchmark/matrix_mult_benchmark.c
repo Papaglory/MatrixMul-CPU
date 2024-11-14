@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "../../src/shared/matrix.h"
-#include "../../src/cpu/matrix_mult_naive.h"
-#include "../../src/cpu/matrix_multithread.h"
-#include "../../src/cpu/matrix_multithread_9avx.h"
-#include "../../src/cpu/matrix_singlethread.h"
-#include "../../src/shared/matrix_utils.h"
+#include "../src/shared/matrix.h"
+#include "../src/cpu/matrix_mult_naive.h"
+#include "../src/cpu/matrix_multithread.h"
+#include "../src/cpu/matrix_multithread_9avx.h"
+#include "../src/cpu/matrix_singlethread.h"
+#include "../src/shared/matrix_utils.h"
 
 // Algorithms to be tested
 typedef enum {
@@ -175,8 +175,8 @@ int is_integer(const char str[]) {
 int main(int argc, char* argv[]) {
 
     // Check for input algorithm existence
-    if (argc < 4) {
-        fprintf(stderr, "Usage: %s <Algorithm> <Dimension_Size> <Seed>\n%s\n", argv[0], "Algorithm Options:\nBLAS\nNAIVE\nSINGLETHREAD\nMULTITHREAD\nMULTITHREAD_9AVX\nContent is stored in benchmark_time.txt");
+    if (argc < 5) {
+        fprintf(stderr, "Usage: %s <Algorithm> <Dimension_Size> <Seed> <Warm-up>\n%s\n", argv[0], "Algorithm Options:\nBLAS\nNAIVE\nSINGLETHREAD\nMULTITHREAD\nMULTITHREAD_9AVX\nContent is stored in benchmark_time.txt");
         return 1;
     }
 
@@ -210,6 +210,15 @@ int main(int argc, char* argv[]) {
     }
     const size_t SEED = atoi(argv[3]);
 
+    // Check if input <Warm-up> is valid
+    fflush(stdout);
+    if (is_integer(argv[4]) != 0) {
+        fprintf(stderr, "%s\n", "Error: Input <Warm-up> has to be either 1 for true or 0 for false");
+        return 1;
+    }
+
+    // Convert input <Warm-up> to bool
+    const bool use_warm_up = atoi(argv[4]) != 0;
 
     printf("%s\n", "--------STARTING matrix_mult_benchmark.c--------");
 
@@ -247,17 +256,19 @@ int main(int argc, char* argv[]) {
     Matrix* C = NULL;
     double* C_blas = NULL;
 
-    // Perform the warm-up
-    printf("%s\n", "Performing warm-up...");
-    int result = warm_up(WARM_UP_COUNT, algo, DIMENSIONS_MIN, DIMENSIONS_MAX, VALUES_MIN, VALUES_MAX, BLOCK_SIZE, NUM_THREADS);
-    if (result != 0) {
-        fprintf(stderr, "Warm-up has failed\n");
-        return 1;
+    if (use_warm_up) {
+
+        // Perform the warm-up
+        printf("%s\n", "Performing warm-up...");
+        int result = warm_up(WARM_UP_COUNT, algo, DIMENSIONS_MIN, DIMENSIONS_MAX, VALUES_MIN, VALUES_MAX, BLOCK_SIZE, NUM_THREADS);
+        if (result != 0) {
+            fprintf(stderr, "Warm-up has failed\n");
+            return 1;
+        }
     }
 
-    double total_time = 0;
-
     // Run the benchmark
+    double total_time = 0;
     printf("%s\n", "Performing benchmark...");
     for (size_t i = 0; i < RUN_COUNT; i++) {
 
