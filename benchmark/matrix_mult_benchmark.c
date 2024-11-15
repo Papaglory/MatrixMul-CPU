@@ -6,6 +6,7 @@
 #include "../src/shared/matrix.h"
 #include "../src/cpu/matrix_mult_naive.h"
 #include "../src/cpu/matrix_multithread.h"
+#include "../src/cpu/matrix_multithread_3avx.h"
 #include "../src/cpu/matrix_multithread_9avx.h"
 #include "../src/cpu/matrix_singlethread.h"
 #include "../src/shared/matrix_utils.h"
@@ -16,6 +17,7 @@ typedef enum {
     NAIVE,
     SINGLETHREAD,
     MULTITHREAD,
+    MULTITHREAD_3AVX,
     MULTITHREAD_9AVX
 } Algorithm;
 
@@ -33,9 +35,10 @@ typedef enum {
  * @param C_blas A pointer to a double array where the BLAS result
  * will be placed if algo = BLAS.
  * @param BLOCK_SIZE The block size to use for the blocking method
- * with the SINGLETHREAD, MULTITHREAD or MULTITHREAD_9AVX algorithm.
+ * with the SINGLETHREAD, MULTITHREAD, MULTITHREAD_3AVX or MULTITHREAD_9AVX
+ * algorithm.
  * @param NUM_THREADS The number of threads to use with the
- * MULTITHREAD algorithm and MULTITHREAD_9AVX.
+ * MULTITHREAD, MULTITHREAD_3AVX and MULTITHREAD_9AVX algorithm
  * @param n The number of rows in A.
  * @param m The number of columns in A.
  * @param p The number of columns in B.
@@ -58,6 +61,9 @@ void run_algorithm(Algorithm algo, Matrix* A, Matrix* B, Matrix* C,
         case MULTITHREAD:
             matrix_multithread_mult(A, B, C, BLOCK_SIZE, NUM_THREADS);
             break;
+        case MULTITHREAD_3AVX:
+            matrix_multithread_mult_3avx(A, B, C, BLOCK_SIZE, NUM_THREADS);
+            break;
         case MULTITHREAD_9AVX:
             matrix_multithread_mult_9avx(A, B, C, BLOCK_SIZE, NUM_THREADS);
             break;
@@ -76,9 +82,10 @@ void run_algorithm(Algorithm algo, Matrix* A, Matrix* B, Matrix* C,
  * @param C_blas A pointer to a double array where the BLAS result
  * will be placed if algo = BLAS.
  * @param BLOCK_SIZE The block size to use for the blocking method
- * with the SINGLETHREAD, MULTITHREAD or MULTITHREAD_9AVX algorithm.
+ * with the SINGLETHREAD, MULTITHREAD, MULTITHREAD_3AVX or MULTITHREAD_9AVX
+ * algorithm.
  * @param NUM_THREADS The number of threads to use with the
- * MULTITHREAD algorithm and MULTITHREAD_9AVX.
+ * MULTITHREAD, MULTITHREAD_3AVX and MULTITHREAD_9AVX algorithm.
  * @param n The number of rows in A.
  * @param m The number of columns in A.
  * @param p The number of columns in B.
@@ -190,6 +197,8 @@ int main(int argc, char* argv[]) {
         algo = SINGLETHREAD;
     } else if (strcmp(argv[1], "MULTITHREAD") == 0) {
         algo = MULTITHREAD;
+    } else if (strcmp(argv[1], "MULTITHREAD_3AVX") == 0) {
+        algo = MULTITHREAD_3AVX;
     } else if (strcmp(argv[1], "MULTITHREAD_9AVX") == 0) {
         algo = MULTITHREAD_9AVX;
     } else {
@@ -220,10 +229,7 @@ int main(int argc, char* argv[]) {
     // Convert input <Warm-up> to bool
     const bool use_warm_up = atoi(argv[4]) != 0;
 
-    printf("%s\n", "--------STARTING matrix_mult_benchmark.c--------");
-
     // Benchmark parameters
-    const size_t RUN_COUNT = 10;
     const size_t WARM_UP_COUNT = 10;
     const size_t BLOCK_SIZE = 128;
     const size_t NUM_THREADS = 16;
@@ -239,19 +245,6 @@ int main(int argc, char* argv[]) {
     // Set the seed for reproducibility
     srand(seed);
 
-    // Utils for tracking time
-    struct timespec start, end;
-    double elapsed_time = 0;
-
-    // Algorithm names for printing
-    const char* ALGORITHM_NAMES[] = {
-        "BLAS",
-        "NAIVE",
-        "SINGLETHREAD",
-        "MULTITHREAD",
-        "MULTITHREAD_9AVX"
-    };
-
     // Prepare result matrices (one for this and BLAS implementation)
     Matrix* C = NULL;
     double* C_blas = NULL;
@@ -259,7 +252,6 @@ int main(int argc, char* argv[]) {
     if (use_warm_up) {
 
         // Perform the warm-up
-        printf("%s\n", "Performing warm-up...");
         int result = warm_up(WARM_UP_COUNT, algo, DIMENSIONS_MIN, DIMENSIONS_MAX, VALUES_MIN, VALUES_MAX, BLOCK_SIZE, NUM_THREADS);
         if (result != 0) {
             fprintf(stderr, "Warm-up has failed\n");
@@ -267,86 +259,53 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Run the benchmark
-    double total_time = 0;
-    printf("%s\n", "Performing benchmark...");
-    for (size_t i = 0; i < RUN_COUNT; i++) {
+    // Generate Matrix dimensions
+    const size_t n = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
+    const size_t m = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
+    const size_t p = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
 
-        printf("%s %s. %s %zu\n", "Algorithm", ALGORITHM_NAMES[algo], "Iteration", i);
+    // Generate matrices
+    Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
+    Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
+    if (!A || !B) {
+        fprintf(stderr, "Error generate_matrix() failed in benchmark\n");
+        matrix_free(A);
+        matrix_free(B);
+        return 1;
+    }
 
-        // Generate Matrix dimensions
-        const size_t n = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
-        const size_t m = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
-        const size_t p = random_between(DIMENSIONS_MIN, DIMENSIONS_MAX);
-
-        // Generate matrices
-        Matrix* A = generate_matrix(VALUES_MIN, VALUES_MAX, n, m);
-        Matrix* B = generate_matrix(VALUES_MIN, VALUES_MAX, m, p);
-        if (!A || !B) {
-            fprintf(stderr, "Error generate_matrix() failed in benchmark\n");
+    // Create result matrices (one for this and BLAS implementation)
+    if (algo != BLAS) {
+        C_blas = NULL;
+        C = matrix_create_with(pattern_zero, NULL, n, p);
+        if (!C) {
+            fprintf(stderr, "Error: matrix_create_with() failed for benchmark\n");
             matrix_free(A);
             matrix_free(B);
             return 1;
         }
-
-        // Create result matrices (one for this and BLAS implementation)
-        if (algo != BLAS) {
-            C_blas = NULL;
-            C = matrix_create_with(pattern_zero, NULL, n, p);
-            if (!C) {
-                fprintf(stderr, "Error: matrix_create_with() failed for benchmark\n");
-                matrix_free(A);
-                matrix_free(B);
-                return 1;
-            }
-        } else {
-            C = NULL;
-            C_blas = (double*)malloc(sizeof(double) * n * p);
-            if (!C_blas) {
-                fprintf(stderr, "Error: Allocation of C_blas failed for benchmark\n");
-                matrix_free(A);
-                matrix_free(B);
-                return 1;
-            }
-        }
-
-        // Start timer
-        clock_gettime(CLOCK_MONOTONIC, &start);
-
-        // Perform the Matrix multiplication
-        run_algorithm(algo, A, B, C, C_blas, BLOCK_SIZE, NUM_THREADS, n, m, p);
-
-        // End timer
-        clock_gettime(CLOCK_MONOTONIC, &end);
-
-        // Calculate elapsed time in seconds and accumulate
-        elapsed_time = (end.tv_sec - start.tv_sec) +
-            (end.tv_nsec - start.tv_nsec) / 1e9;
-        total_time += elapsed_time;
-
-        // Free the generated matrices
-        matrix_free(A);
-        matrix_free(B);
-        if (algo != BLAS) {
-            matrix_free(C);
-        } else {
-            free(C_blas);
+    } else {
+        C = NULL;
+        C_blas = (double*)malloc(sizeof(double) * n * p);
+        if (!C_blas) {
+            fprintf(stderr, "Error: Allocation of C_blas failed for benchmark\n");
+            matrix_free(A);
+            matrix_free(B);
+            return 1;
         }
     }
 
-   // Calculate average time
-    double average_time = total_time / RUN_COUNT;
-    printf("%s %f\n", "average time", average_time);
+    // Perform the Matrix multiplication
+    run_algorithm(algo, A, B, C, C_blas, BLOCK_SIZE, NUM_THREADS, n, m, p);
 
-    FILE* file = fopen(filename, "w");
-    if (!file) {
-        fprintf(stderr, "Error: Opening file for storing time failed\n");
-        return 1;
+    // Free the generated matrices
+    matrix_free(A);
+    matrix_free(B);
+    if (algo != BLAS) {
+        matrix_free(C);
+    } else {
+        free(C_blas);
     }
-    fprintf(file, "%f\n", average_time);
-    fclose(file);
-
-    printf("%s\n", "--------FINISHED matrix_mult_benchmark.c--------");
 
     return 0;
 }

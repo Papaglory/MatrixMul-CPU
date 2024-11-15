@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <errno.h>
 #include <pthread.h>
-#include "matrix_multithread.h"
+#include "matrix_multithread_3avx.h"
 #include "../shared/matrix.h"
 #include "../shared/queue.h"
 #include "../shared/matrix_utils.h"
+// For SIMD
+#include <immintrin.h>
 
 /**
  * @brief Helper function for matrix_multithread_mult(). It allocates a
@@ -20,7 +22,7 @@
  * @param block_size The block size used in the blocking / tiling method.
  * @return Pointer to the Queue.
 */
-Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
+Queue* preprocessing_3avx(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
 
     // Create a new Matrix that is the transpose of Matrix B
     double* B_trans_arr = NULL;
@@ -99,7 +101,7 @@ Queue* preprocessing(Matrix* A, Matrix* B, Matrix* C, size_t block_size) {
  * @param t The Task passed as value that contains the information
  * about the corresponding block in Matrix C.
 */
-void thread_mult(Task t) {
+void thread_mult_3avx(Task t) {
 
     // Matrices: A x B = C
     Matrix* A = t.A;
@@ -138,12 +140,44 @@ void thread_mult(Task t) {
                 size_t c_index = ii * p + jj;
                 size_t b_row_offset = jj * m;
                 double c_value = C_arr[c_index];
+
+                /*
+                 * Using AVX (256 bytes) registers to speed up the process (SIMD).
+                 * The implementation below follows these steps:
+                 * 1. Initialize the first AVX register to 0 (c_vec).
+                 * 2. Load 4 doubles from A into the second AVX register.
+                 * 3. Load 4 doubles from B into the third AVX register.
+                 * 4. Perform the multiplication and add the value to c_vec.
+                 * 5. Unwrap the c_vec value using an array.
+                 * 6. Add the elements of c_vec into a single value.
+                 */
+
+                // Initialize AVX register to zero. These will act as a holder
+                // containing the accumulation of the dot product for a single
+                // (ii,jj) cell in C when going over the block corresponding
+                // to k.
+                __m256d c_vec = _mm256_setzero_pd();
+
                 for (; kk + 3 < k_min; kk += 4) {
-                    c_value += A_arr[a_row_offset + kk] * B_trans_arr[b_row_offset + kk];
-                    c_value += A_arr[a_row_offset + kk + 1] * B_trans_arr[b_row_offset + kk + 1];
-                    c_value += A_arr[a_row_offset + kk + 2] * B_trans_arr[b_row_offset + kk + 2];
-                    c_value += A_arr[a_row_offset + kk + 3] * B_trans_arr[b_row_offset + kk + 3];
+
+                    // Load the 4 doubles from A starting from the address given
+                    // as function argument.
+                    __m256d a_vals = _mm256_loadu_pd(&A_arr[a_row_offset + kk]);
+
+                    // Load the 4 doubles from B starting from the address given
+                    // as function argument.
+                    __m256d b_vals = _mm256_loadu_pd(&B_trans_arr[b_row_offset + kk]);
+
+                    // Multiply the dot product between the A and B values
+                    // in the AVX registers and add the value to the
+                    // c_vec.
+                    c_vec = _mm256_fmadd_pd(a_vals, b_vals, c_vec);
                 }
+
+                // Unwrap the c_vec and sum up the elements in the vector
+                double temp[4];
+                _mm256_store_pd(temp, c_vec);
+                c_value += temp[0] + temp[1] + temp[2] + temp[3];
 
                 // Handle residual operations not handled by the SIMD loop
                 for (; kk < k_min; kk++) {
@@ -158,7 +192,7 @@ void thread_mult(Task t) {
 }
 
 // Mutex lock used to access the Queue
-pthread_mutex_t queue_lock;
+pthread_mutex_t queue_lock_3avx;
 
 /**
  * @brief Function used by the threads. A thread will access the Queue
@@ -171,7 +205,7 @@ pthread_mutex_t queue_lock;
  * @return In both cases of success and failure, it returns NULL.
  * Failures are however logged using perror.
 */
-void* process_tasks(void* arg) {
+void* process_tasks_3avx(void* arg) {
 
     // Extract argument
     Queue* q = (Queue*) arg;
@@ -183,7 +217,7 @@ void* process_tasks(void* arg) {
         bool is_empty;
 
         // Lock the Queue with the mutex before accessing
-        if (pthread_mutex_lock(&queue_lock) != 0) {
+        if (pthread_mutex_lock(&queue_lock_3avx) != 0) {
             perror("Error: Mutex lock failed");
             return NULL;
         }
@@ -195,7 +229,7 @@ void* process_tasks(void* arg) {
         }
 
         // Unlock the Queue
-        if(pthread_mutex_unlock(&queue_lock) != 0) {
+        if(pthread_mutex_unlock(&queue_lock_3avx) != 0) {
             perror("Error: Mutex unlock failed");
             return NULL;
         }
@@ -205,14 +239,14 @@ void* process_tasks(void* arg) {
             break;
         } else {
             // Perform Matrix multiplication with the Task
-            thread_mult(t);
+            thread_mult_3avx(t);
         }
     }
 
     return NULL;
 }
 
-void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size, size_t NUM_THREADS) {
+void matrix_multithread_mult_3avx(Matrix* A, Matrix* B, Matrix* C, size_t block_size, size_t NUM_THREADS) {
 
     if (!A || !B || !C) {
         errno = EINVAL;
@@ -252,13 +286,13 @@ void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size,
     block_size = (block_size > smallest_dimension) ? smallest_dimension : block_size;
 
     // Create a Queue filled with all the tasks / blocks to calculate in C
-    Queue* q = preprocessing(A, B, C, block_size);
+    Queue* q = preprocessing_3avx(A, B, C, block_size);
 
     // Retrieve a pointer to B_transposed so that it can be later freed
     Matrix* B_trans = queue_peek(q).B_trans;
 
     // Initialize the mutex for the Queue
-    pthread_mutex_init(&queue_lock, NULL);
+    pthread_mutex_init(&queue_lock_3avx, NULL);
 
     // Create array to hold threads
     pthread_t threads[NUM_THREADS];
@@ -267,7 +301,7 @@ void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size,
     for (size_t i = 0; i < NUM_THREADS; i++) {
 
         // Create a thread and check for successfull initialization
-        if (pthread_create(&threads[i], NULL, process_tasks, q) != 0) {
+        if (pthread_create(&threads[i], NULL, process_tasks_3avx, q) != 0) {
             perror("Error: Creating thread failed");
 
             // Handle clean-up by canceling threads and freeing allocations
@@ -278,7 +312,7 @@ void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size,
             }
 
             // Destory the Queue mutex
-            if (pthread_mutex_destroy(&queue_lock) != 0) {
+            if (pthread_mutex_destroy(&queue_lock_3avx) != 0) {
                 perror("Error: Destorying queue_lock mutex failed");
             }
 
@@ -293,7 +327,7 @@ void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size,
             perror("Error: pthread_join failed");
 
             free(q);
-            pthread_mutex_destroy(&queue_lock);
+            pthread_mutex_destroy(&queue_lock_3avx);
             free(C);
             return;
         }
@@ -304,6 +338,6 @@ void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size,
     free(B_trans);
 
     // Destory the Queue mutex
-    pthread_mutex_destroy(&queue_lock);
+    pthread_mutex_destroy(&queue_lock_3avx);
 }
 

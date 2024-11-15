@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def create_heatmap_cache_miss_rate(data):
+def create_heatmap_cache_miss_rate(data, NUM_RUNS):
 
     # Extract data corresponding to the grid
     algorithms = data['Algorithm'].to_numpy()
@@ -13,9 +13,13 @@ def create_heatmap_cache_miss_rate(data):
     # Extract data corresponding to the heat intensity
     cache_miss_rates = data['Cache-Miss-Rate'].to_numpy()
 
-    # Get unique algorithms and dimensions
-    unique_algorithms = np.unique(algorithms)
+    # Get unique dimensions
     unique_dimensions = np.unique(dimensions)
+
+    # Get unique algorithms.
+    # Using pandas over np to preserve the algorithm order (np.unique() sorts in alphabetical order)
+    ordered_algorithms = pd.Categorical(data['Algorithm'], categories=data['Algorithm'].unique(), ordered=True)
+    unique_algorithms = ordered_algorithms.categories
 
     # Initialize heatmap with NaN values
     heatmap_array = np.full((len(unique_dimensions), len(unique_algorithms)), np.nan)
@@ -30,15 +34,19 @@ def create_heatmap_cache_miss_rate(data):
         col_idx = algorithm_to_index[alg]
         heatmap_array[row_idx, col_idx] = rate
 
-    # Set the color
-    sns.set_theme(style="whitegrid")
+    # Flip the heatmap on the horizontal axis to have dimenisons grow upwards
+    heatmap_array = np.flip(heatmap_array, 0)
+
+    # Set the style and font figure size
+    sns.set_theme(style="whitegrid", font_scale=1.1)
 
     # Need to be lists of strings or sns wont plot
     xtick_labels = list(unique_algorithms)
-    ytick_labels = list(map(str, unique_dimensions))
+    # Flip the dimension labels to grow upwards
+    ytick_labels = list(map(str, np.flip(unique_dimensions)))
 
     # Create the heatmap
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(12, 8))
     sns.heatmap(
         heatmap_array,
         annot=True,
@@ -57,84 +65,96 @@ def create_heatmap_cache_miss_rate(data):
     # Save
     plt.savefig("cache_miss_heatmap.png")
 
-def create_bar_cpi(data):
 
-    # Extract data for x-axis
-    algorithms = data["Algorithm"].to_numpy()
-    dimensions = data["Dimension"].to_numpy()
+def create_bar_cpi(data, NUM_RUNS):
 
-    # Extract data for y-axis
-    cpi = data["Cycles per Instruction (CPI)"].to_numpy()
+    # Set the style and font figure size
+    sns.set_theme(style="whitegrid", font_scale=1.1)
 
-    # Set the color
-    sns.set_theme(style="whitegrid")
-
-    # Unwrap algorithm and dimension to a x-axis labels
-    x_labels = [f"{alg} (Dim {dim})" for alg, dim in zip(algorithms, dimensions)]
-
-    # Create the bar plot
-    plt.figure(figsize=(8, 6))
+    # Create the bar plot, grouping by Dimension with color for each Algorithm
+    plt.figure(figsize=(12, 8))
     sns.barplot(
-        x=x_labels,
-        y=cpi,
-        hue=x_labels,
+        x="Dimension",
+        y="Cycles per Instruction (CPI)",
+        hue="Algorithm",
+        data=data,
         palette="YlGnBu",
-        dodge=False,
-        legend=False
     )
 
     # Add title and labels
     plt.title("Cycles per Instruction (CPI) by Algorithm and Dimension")
-    plt.xlabel("Algorithm (Dimension)")
+    plt.xlabel("Dimension")
     plt.ylabel("Cycles per Instruction (CPI)")
+
+    # Rotate x-axis labels if necessary
+    plt.xticks(rotation=0)
+
+    # Adjust the legend to be outside the plot if you need more space
+    plt.legend(title="Algorithm", bbox_to_anchor=(1.05, 1), loc='upper left')
 
     plt.tight_layout()
     # Save
     plt.savefig("cpi_bar.png")
 
 
-def create_graph_execution_time(data):
+def create_graph_execution_time(data, NUM_RUNS):
 
     # Extract and convert time to log base 10
     data["Log Execution Time"] = np.log10(data["Average Execution Time (seconds)"])
 
-    # Set the color
-    sns.set_theme(style="whitegrid")
+    # Set the style and font figure size
+    sns.set_theme(style="whitegrid", font_scale=1.1)
 
-    # Create the bar plot
-    plt.figure(figsize=(8, 6))
+    # Create plot canvas
+    plt.figure(figsize=(12, 8))
 
-    sns.lineplot(
-        data=data,
-        x="Dimension",
-        y="Average Execution Time (seconds)",
-        # Different color for each Algorithm
-        hue="Algorithm",
-        marker="o",
-        palette="YlGnBu"
-    )
+    # Custom markers for each algorithm
+    markers = {
+        "BLAS": "o",
+        "NAIVE": "+",
+        "SINGLETHREAD": "s",
+        "MULTITHREAD": "D",
+        "MULTITHREAD_3AVX": "*",
+        "MULTITHREAD_9AVX": "^"
+    }
 
-    # Add title and labels
+    # Plot each algorithm individually with custom line style and marker
+    for algorithm, marker in markers.items():
+        sns.lineplot(
+            data=data[data["Algorithm"] == algorithm],
+            x="Dimension",
+            y="Log Execution Time",
+            label=algorithm,
+            linestyle="dashed",
+            marker=marker,
+            linewidth=3
+        )
+
+    # Customize plot layout
     plt.title("Average Execution Time by Dimension and Algorithm")
     plt.xlabel("Dimension")
-    plt.ylabel("Average Execution Time (seconds)")
+    plt.ylabel("Average Execution Time (seconds, log 10 scale)")
+    plt.legend(title="Algorithm", loc="upper left", fontsize="medium", title_fontsize="large")
 
     plt.tight_layout()
     plt.savefig("execution_time_plot.png")
 
 def main():
 
+    # The number of runs used for each datapoint (row) in the data during benchmark
+    NUM_RUNS = 50;
+
     # Load data
     data = pd.read_csv('benchmark_results.csv')
 
     # Create and save heatmap
-    create_heatmap_cache_miss_rate(data)
+    create_heatmap_cache_miss_rate(data, NUM_RUNS)
 
     # Create and save bar diagram for CPI
-    create_bar_cpi(data)
+    create_bar_cpi(data, NUM_RUNS)
 
     # Create and save graph plot for execution time
-    create_graph_execution_time(data)
+    create_graph_execution_time(data, NUM_RUNS)
 
 # Execute main if this file is called as a script
 if __name__ == "__main__":

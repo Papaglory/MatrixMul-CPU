@@ -1,5 +1,5 @@
 /**
- * @file matrix_multithread_9avx.h
+ * @file matrix_multithread_3avx.h
  *
  * @brief Contains function prototypes for Matrix multiplication
  * utilizing the following for improved performance:
@@ -27,8 +27,8 @@
  * see matrix_singlethread.h.
  */
 
-#ifndef MATRIX_MULTITHREAD_9AVX_H
-#define MATRIX_MULTITHREAD_9AVX_H
+#ifndef MATRIX_MULTITHREAD_3AVX_H
+#define MATRIX_MULTITHREAD_3AVX_H
 
 #include "../shared/matrix.h"
 
@@ -45,6 +45,6 @@
  * @param block_size The block size used in the blocking / tiling method.
  * @param NUM_THREADS The number of threads to utilize.
 */
-void matrix_multithread_mult_9avx(Matrix* A, Matrix* B, Matrix* C, size_t block_size, size_t NUM_THREADS);
+void matrix_multithread_mult_3avx(Matrix* A, Matrix* B, Matrix* C, size_t block_size, size_t NUM_THREADS);
 
-#endif // MATRIX_MULTITHREAD_9AVX_H
+#endif // MATRIX_MULTITHREAD_3AVX_H

@@ -4,17 +4,10 @@
  * @brief Contains function prototypes for Matrix multiplication
  * utilizing the following for improved performance:
  * - Multithreading
- * - SIMD registers
  * - Blocking / tiling method
  *
- * @Note The difference between matrix_multithread.h and
- * matrix_multithread_9avx.h is the number of AVX registers used
- * during the matrix multiplication in the inner-most loop.
- *
- * Using SIMD we require at least 3 AVX registers: one for accumulation,
- * one for holding elements in Matrix A, one for holding elements in Matrix B.
- * Thus, matrix_multithread_9avx.h can be seen as a factor of three in regards
- * to AVX register usage.
+ * @Note This implementation does not use SIMD registers. It is
+ * default multithread implementation using the blocking / tiling method.
  *
  * @details
  * For the multithreading, a single Queue is created that hands out
@@ -24,7 +17,7 @@
  * a single mutex.
  *
  * For documentation on the blocking / tiling method,
- * see matrix_multithread.h.
+ * see matrix_singlethread.h.
  */
 
 #ifndef MATRIX_MULTITHREAD_H
