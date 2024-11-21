@@ -1,4 +1,6 @@
 #!/bin/bash
+# Note: Make sure to run the manfile in the root directory with matrix_mult_benchmark.c
+# to get the correct program when compiling using manfile.
 
 sum_array() {
     local arr=("$@")
@@ -30,18 +32,16 @@ calculate_sample_variance() {
     echo "$local_sample_variance"
 }
 
-# Note: Make sure to run the manfile in the root directory with matrix_mult_benchmark.c.
-
 # Filename to store the benchmark data in
-filename="benchmark/benchmark_results.csv"
+filename="benchmark/block_size_results.csv"
 
 # Add the headers / categories into the start of the CSV file.
 # Use double quotes around $filename as safety practice to ensure
 # interpretation as a single argument.
-echo "Algorithm,Dimension,Average Execution Time (seconds),Cycles,Instructions,Cycles per Instruction (CPI),Cache-Misses,Cache-References,Cache-Miss-Rate,Execution Time Variance,Cycles Variance,Instructions Variance,CPI Variance,Cache-Misses Variance,Cache-References Variance,Cache-Miss-Rate Variance" > "$filename"
+echo "Block Size,Dimension,Average Execution Time (seconds),Cycles,Instructions,Cycles per Instruction (CPI),Cache-Misses,Cache-References,Cache-Miss-Rate,Execution Time Variance,Cycles Variance,Instructions Variance,CPI Variance,Cache-Misses Variance,Cache-References Variance,Cache-Miss-Rate Variance" > "$filename"
 
-# Create array of algorithms to benchmark
-algorithms=("BLAS" "NAIVE" "SINGLETHREAD" "MULTITHREAD" "MULTITHREAD_3AVX" "MULTITHREAD_9AVX")
+# Create array of block sizes to benchmark
+block_sizes=(8 16 32 64 128 200 256)
 
 # Create array of dimensions to benchmark
 dimensions=(50 100 200 500 750 1000 1500 2000)
@@ -50,13 +50,16 @@ dimensions=(50 100 200 500 750 1000 1500 2000)
 NUM_RUNS=40
 
 # Seed for reproducability when running benchmark
-SEED=42
+SEED=43
+
+# Algorithm to optimize the block size with
+algo="MULTITHREAD_9AVX"
 
 # Data for perf to collect
 metrics="cycles,instructions,cache-misses,cache-references"
 
 # Run benchmark for each dimension and algorithm and append result in $filename
-for algo in "${algorithms[@]}"; do
+for block_size in "${block_sizes[@]}"; do
 
     # Newline
     echo ""
@@ -69,7 +72,7 @@ for algo in "${algorithms[@]}"; do
 
         # Perform warm-up
         echo "Warm-up $algo with dimension size of $dimension..."
-        ./program $algo $dimension $SEED 1 # 1 for using warm-up
+        ./program $algo $dimension $SEED $block_size 1 # 1 for using warm-up
 
         # Arrays to contain the data from each run
         record_time=()
@@ -85,7 +88,7 @@ for algo in "${algorithms[@]}"; do
 
             # Run perf and generate perf_report.txt file
             echo "Performing run $run..."
-            perf stat -o perf_report.txt -e $metrics ./program $algo $dimension $SEED 0 > /dev/null
+            perf stat -o perf_report.txt -e $metrics ./program $algo $dimension $SEED $block_size 0 > /dev/null
 
             # Extract the metrics from perf report
             time=$(cat perf_report.txt | grep "elapsed" | awk -F ' ' '{print $1}' | tr -d ',' | tr -d ' ')

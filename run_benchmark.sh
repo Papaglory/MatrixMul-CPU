@@ -1,4 +1,6 @@
 #!/bin/bash
+# Note: Make sure to run the manfile in the root directory with matrix_mult_benchmark.c
+# to get the correct program when compiling using manfile.
 
 sum_array() {
     local arr=("$@")
@@ -29,8 +31,6 @@ calculate_sample_variance() {
 
     echo "$local_sample_variance"
 }
-
-# Note: Make sure to run the manfile in the root directory with matrix_mult_benchmark.c.
 
 # Filename to store the benchmark data in
 filename="benchmark/benchmark_results.csv"
