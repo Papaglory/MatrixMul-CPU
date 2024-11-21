@@ -46,9 +46,6 @@ algorithms=("BLAS" "NAIVE" "SINGLETHREAD" "MULTITHREAD" "MULTITHREAD_3AVX" "MULT
 # Create array of dimensions to benchmark
 dimensions=(50 100 200 500 750 1000 1500 2000)
 
-# Using previously found optimal block size (see run_block_size_benchmark.sh)
-BLOCK_SIZE=128
-
 # Number of runs for each (algorithm, dimension) benchmark
 NUM_RUNS=40
 
@@ -72,7 +69,7 @@ for algo in "${algorithms[@]}"; do
 
         # Perform warm-up
         echo "Warm-up $algo with dimension size of $dimension..."
-        ./program $algo $dimension $SEED $BLOCK_SIZE 1 # 1 for using warm-up
+        ./program $algo $dimension $SEED 1 # 1 for using warm-up
 
         # Arrays to contain the data from each run
         record_time=()
@@ -88,7 +85,7 @@ for algo in "${algorithms[@]}"; do
 
             # Run perf and generate perf_report.txt file
             echo "Performing run $run..."
-            perf stat -o perf_report.txt -e $metrics ./program $algo $dimension $SEED $BLOCK_SIZE 0 > /dev/null
+            perf stat -o perf_report.txt -e $metrics ./program $algo $dimension $SEED 0 > /dev/null
 
             # Extract the metrics from perf report
             time=$(cat perf_report.txt | grep "elapsed" | awk -F ' ' '{print $1}' | tr -d ',' | tr -d ' ')
