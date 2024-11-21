@@ -182,8 +182,8 @@ int is_integer(const char str[]) {
 int main(int argc, char* argv[]) {
 
     // Check for input algorithm existence
-    if (argc < 5) {
-        fprintf(stderr, "Usage: %s <Algorithm> <Dimension_Size> <Seed> <Warm-up>\n%s\n", argv[0], "Algorithm Options:\nBLAS\nNAIVE\nSINGLETHREAD\nMULTITHREAD\nMULTITHREAD_9AVX\nContent is stored in benchmark_time.txt");
+    if (argc < 6) {
+        fprintf(stderr, "Usage: %s <Algorithm> <Dimension_Size> <Seed> <Block_Size> <Warm-up>\n%s\n", argv[0], "Algorithm Options:\nBLAS\nNAIVE\nSINGLETHREAD\nMULTITHREAD\nMULTITHREAD_9AVX\nContent is stored in benchmark_time.txt");
         return 1;
     }
 
@@ -219,19 +219,21 @@ int main(int argc, char* argv[]) {
     }
     const size_t SEED = atoi(argv[3]);
 
+    const size_t INPUT_BLOCK_SIZE = atoi(argv[4]);
+
     // Check if input <Warm-up> is valid
     fflush(stdout);
-    if (is_integer(argv[4]) != 0) {
+    if (is_integer(argv[5]) != 0) {
         fprintf(stderr, "%s\n", "Error: Input <Warm-up> has to be either 1 for true or 0 for false");
         return 1;
     }
 
     // Convert input <Warm-up> to bool
-    const bool use_warm_up = atoi(argv[4]) != 0;
+    const bool use_warm_up = atoi(argv[5]) != 0;
 
     // Benchmark parameters
     const size_t WARM_UP_COUNT = 10;
-    const size_t BLOCK_SIZE = 128;
+    const size_t BLOCK_SIZE = INPUT_BLOCK_SIZE;
     const size_t NUM_THREADS = 16;
     const char filename[] = "benchmark_time.txt";
 

@@ -13,7 +13,7 @@ sum_array() {
 # Assumes NUM_RUNS > 1.
 calculate_sample_variance() {
     # First argument
-    local avg_time=$1
+    local mean=$1
     # Shift drops the first argument and shifts so that arg $n -> arg $n-1
     shift
     local NUM_RUNS=$1
@@ -22,7 +22,7 @@ calculate_sample_variance() {
     local arr=("$@")
     local sse=0
     for val in "${arr[@]}"; do
-        sse=$(echo "scale=10; $sse + ($avg_time - $val)^2" | bc)
+        sse=$(echo "scale=10; $sse + ($mean - $val) * ($mean - $val)" | bc)
     done
 
     local_sample_variance=$(echo "scale=10; $sse / ($NUM_RUNS - 1)" | bc)
@@ -44,13 +44,13 @@ echo "Algorithm,Dimension,Average Execution Time (seconds),Cycles,Instructions,C
 algorithms=("BLAS" "NAIVE" "SINGLETHREAD" "MULTITHREAD" "MULTITHREAD_3AVX" "MULTITHREAD_9AVX")
 
 # Create array of dimensions to benchmark
-dimensions=(50 100 200 500 750) # 1000) # 1500 2000)
+dimensions=(50 100 200 500 750 1000 1500 2000)
 
 # Number of runs for each (algorithm, dimension) benchmark
-NUM_RUNS=50
+NUM_RUNS=40
 
 # Seed for reproducability when running benchmark
-SEED=27
+SEED=42
 
 # Data for perf to collect
 metrics="cycles,instructions,cache-misses,cache-references"
@@ -133,13 +133,13 @@ for algo in "${algorithms[@]}"; do
         avg_cache_miss_rate=$(echo "scale=10; $total_cache_miss_rate / $NUM_RUNS" | bc)
 
         # Data to calculate the sample variance from benchmark runs
-        variance_time=$(echo "scale=10; $(calculate_sample_variance "$avg_time" "$NUM_RUNS" "${record_time[@]}")" | bc)
-        variance_cycles=$(echo "scale=10; $(calculate_sample_variance "$avg_cycles" "$NUM_RUNS" "${record_cycles[@]}")" | bc)
-        variance_instructions=$(echo "scale=10; $(calculate_sample_variance "$avg_instructions" "$NUM_RUNS" "${record_instructions[@]}")" | bc)
-        variance_cpi=$(echo "scale=10; $(calculate_sample_variance "$avg_cpi" "$NUM_RUNS" "${record_cpi[@]}")" | bc)
-        variance_cache_misses=$(echo "scale=10; $(calculate_sample_variance "$avg_cache_misses" "$NUM_RUNS" "${record_cache_misses[@]}")" | bc)
-        variance_cache_references=$(echo "scale=10; $(calculate_sample_variance "$avg_cache_references" "$NUM_RUNS" "${record_cache_references[@]}")" | bc)
-        variance_cache_miss_rate=$(echo "scale=10; $(calculate_sample_variance "$avg_cache_miss_rate" "$NUM_RUNS" "${record_cache_miss_rate[@]}")" | bc)
+        variance_time=$(calculate_sample_variance "$avg_time" "$NUM_RUNS" "${record_time[@]}")
+        variance_cycles=$(calculate_sample_variance "$avg_cycles" "$NUM_RUNS" "${record_cycles[@]}")
+        variance_instructions=$(calculate_sample_variance "$avg_instructions" "$NUM_RUNS" "${record_instructions[@]}")
+        variance_cpi=$(calculate_sample_variance "$avg_cpi" "$NUM_RUNS" "${record_cpi[@]}")
+        variance_cache_misses=$(calculate_sample_variance "$avg_cache_misses" "$NUM_RUNS" "${record_cache_misses[@]}")
+        variance_cache_references=$(calculate_sample_variance "$avg_cache_references" "$NUM_RUNS" "${record_cache_references[@]}")
+        variance_cache_miss_rate=$(calculate_sample_variance "$avg_cache_miss_rate" "$NUM_RUNS" "${record_cache_miss_rate[@]}")
 
         # Write the result into the CSV file
         echo "$algo,$dimension,$avg_time,$avg_cycles,$avg_instructions,$avg_cpi,$avg_cache_misses,$avg_cache_references,$avg_cache_miss_rate,$variance_time,$variance_cycles,$variance_instructions,$variance_cpi,$variance_cache_misses,$variance_cache_references,$variance_cache_miss_rate" >> "$filename"

@@ -1,11 +1,13 @@
 #!/bin/bash
 
+# Function to test a single run benchmark and print perf metric results
 run_program() {
 
     local algo=$1
     local dim=$2
     local SEED=$3
-    perf stat -o rep.txt -e $metrics ./program "$algo" "$dim" $SEED 0 > /dev/null
+    local BLOCK_SIZE=$4
+    perf stat -o rep.txt -e $metrics ./program "$algo" "$dim" "$SEED" "$BLOCK_SIZE" 0 > /dev/null
     cat rep.txt
 
     # Extract the metrics from perf report
@@ -37,8 +39,6 @@ run_program() {
     echo "Cache Miss Rate    : $cache_miss_rate"
 }
 
-
-
 # Data for perf to collect
 metrics="cycles,instructions,cache-misses,cache-references"
 
@@ -46,4 +46,7 @@ SEED=42
 
 # Run the program and collect metrics
 ./manfile > /dev/null
-run_program "BLAS" "750" $SEED
+run_program "$1" "$2" "$3" "$4"
+
+# Clean up
+rm rep.txt
