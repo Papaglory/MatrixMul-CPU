@@ -123,7 +123,7 @@ def create_bar_cpi(data, NUM_RUNS):
 
     plt.tight_layout()
     # Save
-    plt.savefig("cpi_bar.png")
+    plt.savefig("plots/cpi_bar.png")
 
 
 def create_graph_execution_time(data, NUM_RUNS):
@@ -166,7 +166,7 @@ def create_graph_execution_time(data, NUM_RUNS):
     plt.legend(title="Algorithm", loc="upper left", fontsize="medium", title_fontsize="large")
 
     plt.tight_layout()
-    plt.savefig("execution_time_plot.png")
+    plt.savefig("plots/execution_time_plot.png")
 
 def main():
 
@@ -174,22 +174,22 @@ def main():
     NUM_RUNS = 50;
 
     # Load benchmark data
-    data = pd.read_csv('benchmark_results.csv')
+    data = pd.read_csv('data/benchmark_results.csv')
 
     # Load block size data of state-of-the-art algorithm: MULTITHREAD_9AVX
-    block_size_data = pd.read_csv('block_size_results.csv')
+    block_size_data = pd.read_csv('data/block_size_results.csv')
 
     # Create cache-miss-rate heatmap
     create_heatmap_with(data['Algorithm'], data['Dimension'], data['Cache-Miss-Rate'],
-                        "Cache-Miss-Rate", "Algorithm", "Dimension", "cache_miss_heatmap.png")
+                        "Cache-Miss-Rate", "Algorithm", "Dimension", "plots/cache_miss_heatmap.png")
 
     # Create average execution time (seconds) heatmap
     create_heatmap_with(data['Algorithm'], data['Dimension'], data['Average Execution Time (seconds)'],
-                        "Average Execution Time (seconds)", "Algorithm", "Dimension", "execution_time_heatmap.png")
+                        "Average Execution Time (seconds)", "Algorithm", "Dimension", "plots/execution_time_heatmap.png")
 
     # Create block size and execution time heatmap
     create_heatmap_with(block_size_data['Block Size'], block_size_data['Dimension'], block_size_data['Average Execution Time (seconds)'],
-                        "Average Execution Time (seconds)", "Block Size", "Dimension", "block_size_heatmap.png")
+                        "Average Execution Time (seconds)", "Block Size", "Dimension", "plots/block_size_heatmap.png")
 
     # Create and save bar diagram for CPI
     create_bar_cpi(data, NUM_RUNS)

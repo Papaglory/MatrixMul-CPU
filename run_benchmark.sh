@@ -33,7 +33,7 @@ calculate_sample_variance() {
 }
 
 # Filename to store the benchmark data in
-filename="benchmark/benchmark_results.csv"
+filename="benchmark/data/benchmark_results.csv"
 
 # Add the headers / categories into the start of the CSV file.
 # Use double quotes around $filename as safety practice to ensure
