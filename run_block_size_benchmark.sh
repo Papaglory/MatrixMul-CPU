@@ -145,7 +145,7 @@ for block_size in "${block_sizes[@]}"; do
         variance_cache_miss_rate=$(calculate_sample_variance "$avg_cache_miss_rate" "$NUM_RUNS" "${record_cache_miss_rate[@]}")
 
         # Write the result into the CSV file
-        echo "$algo,$dimension,$avg_time,$avg_cycles,$avg_instructions,$avg_cpi,$avg_cache_misses,$avg_cache_references,$avg_cache_miss_rate,$variance_time,$variance_cycles,$variance_instructions,$variance_cpi,$variance_cache_misses,$variance_cache_references,$variance_cache_miss_rate" >> "$filename"
+        echo "$block_size,$dimension,$avg_time,$avg_cycles,$avg_instructions,$avg_cpi,$avg_cache_misses,$avg_cache_references,$avg_cache_miss_rate,$variance_time,$variance_cycles,$variance_instructions,$variance_cpi,$variance_cache_misses,$variance_cache_references,$variance_cache_miss_rate" >> "$filename"
     done
 done
 

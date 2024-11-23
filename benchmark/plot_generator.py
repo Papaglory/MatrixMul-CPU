@@ -126,7 +126,7 @@ def create_bar_cpi(data, NUM_RUNS):
     plt.savefig("plots/cpi_bar.png")
 
 
-def create_graph_execution_time(data, NUM_RUNS):
+def create_graph_execution_time(data, NUM_RUNS, filename):
 
     # Extract and convert time to log base 10
     data["Log Execution Time"] = np.log10(data["Average Execution Time (seconds)"])
@@ -166,7 +166,7 @@ def create_graph_execution_time(data, NUM_RUNS):
     plt.legend(title="Algorithm", loc="upper left", fontsize="medium", title_fontsize="large")
 
     plt.tight_layout()
-    plt.savefig("plots/execution_time_plot.png")
+    plt.savefig(filename)
 
 def main():
 
@@ -183,6 +183,10 @@ def main():
     create_heatmap_with(data['Algorithm'], data['Dimension'], data['Cache-Miss-Rate'],
                         "Cache-Miss-Rate", "Algorithm", "Dimension", "plots/cache_miss_heatmap.png")
 
+    create_heatmap_with(data['Algorithm'], data['Dimension'], data['Cache-Miss-Rate Variance'],
+                        "Cache-Miss-Rate", "Algorithm", "Dimension", "plots/cache_miss_heatmap.png")
+
+
     # Create average execution time (seconds) heatmap
     create_heatmap_with(data['Algorithm'], data['Dimension'], data['Average Execution Time (seconds)'],
                         "Average Execution Time (seconds)", "Algorithm", "Dimension", "plots/execution_time_heatmap.png")
@@ -195,7 +199,16 @@ def main():
     create_bar_cpi(data, NUM_RUNS)
 
     # Create and save graph plot for execution time
-    create_graph_execution_time(data, NUM_RUNS)
+    create_graph_execution_time(data, NUM_RUNS, "plots/execution_time_plot.png")
+
+    # Filter such that we have selected algorithms
+    excluded_algos = ["NAIVE", "SINGLETHREAD", "MULTITHREAD", "BLAS"]
+    filtered_data = data.copy()
+    for algo in excluded_algos:
+        filtered_data = filtered_data[filtered_data['Algorithm'] != algo]
+
+    # Create and save graph plot for execution time
+    create_graph_execution_time(filtered_data, NUM_RUNS, "plots/execution_time_plot_TODO.png")
 
 # Execute main if this file is called as a script
 if __name__ == "__main__":
