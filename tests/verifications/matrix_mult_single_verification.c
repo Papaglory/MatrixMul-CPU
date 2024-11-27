@@ -12,7 +12,7 @@ int main() {
 
     // Benchmark parameters
     const int RUN_COUNT = 100;
-    const int BLOCK_SIZE = 1; // Does not matter since we only care about result
+    const int BLOCK_SIZE = 64; // Does not matter since we only care about result
     // Used if there are different rounding errors between the implementations
     const double APPROXIMATION_THRESHOLD = 1e-9;
 

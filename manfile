@@ -5,7 +5,8 @@
 # bash script to create the test executables.
 
 # Make variable names for the test file
-TEST_FILE="benchmark/matrix_mult_benchmark.c"
+#TEST_FILE="benchmark/matrix_mult_benchmark.c"
+TEST_FILE="tests/verifications/matrix_mult_single_verification.c"
 OUTPUT_FILE="program"
 
 # Clean and make a new build using make
