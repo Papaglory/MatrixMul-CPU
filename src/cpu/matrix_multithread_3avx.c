@@ -157,7 +157,6 @@ void thread_mult_3avx(Task t) {
                 // (ii,jj) cell in C when going over the block corresponding
                 // to k.
                 __m256d c_vec = _mm256_setzero_pd();
-
                 for (; kk + 3 < k_min; kk += 4) {
 
                     // Load the 4 doubles from A starting from the address given
