@@ -44,6 +44,21 @@ void matrix_singlethread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size
     size_t smallest_dimension = min(min_nm, p);
     block_size = (block_size > smallest_dimension) ? smallest_dimension : block_size;
 
+    // Create a new Matrix that is the transpose of Matrix B
+    double* B_trans_arr = NULL;
+    int result = posix_memalign((void**)&B_trans_arr, 64, sizeof(double) * B->num_rows * B->num_cols);
+    if (result != 0) {
+        perror("Error: Allocation of B transposed array failed");
+        return;
+    }
+
+    // Insert transposed values and Allocate Matrix
+    for (size_t i = 0; i < B->num_rows; i++) {
+        for (size_t j = 0; j < B->num_cols; j++) {
+            B_trans_arr[j * B->num_rows + i] = B->values[i * B->num_cols + j];
+        }
+    }
+
     // retrieve internal Matrix arrays
     double* A_arr = A->values;
     double* B_arr = B->values;
@@ -81,19 +96,22 @@ void matrix_singlethread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size
                         size_t kk = 0;
                         size_t c_index = ii * p + jj;
                         size_t a_row_offset = ii * m;
+                        size_t b_row_offset = jj * m;
                         for (kk = k; kk + 3 < k_max; kk += 4) {
-                            C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
-                            C_arr[c_index] += A_arr[a_row_offset + (kk + 1)] * B_arr[(kk + 1) * p + jj];
-                            C_arr[c_index] += A_arr[a_row_offset + (kk + 2)] * B_arr[(kk + 2) * p + jj];
-                            C_arr[c_index] += A_arr[a_row_offset + (kk + 3)] * B_arr[(kk + 3) * p + jj];
+                            C_arr[c_index] += A_arr[a_row_offset + kk] * B_trans_arr[b_row_offset + kk];
+                            C_arr[c_index] += A_arr[a_row_offset + (kk + 1)] * B_trans_arr[b_row_offset + kk + 1];
+                            C_arr[c_index] += A_arr[a_row_offset + (kk + 2)] * B_trans_arr[b_row_offset + kk + 2];
+                            C_arr[c_index] += A_arr[a_row_offset + (kk + 3)] * B_trans_arr[b_row_offset + kk + 3];
                         }
                         for (; kk < k_max; kk++) {
-                            C_arr[c_index] += A_arr[a_row_offset + kk] * B_arr[kk * p + jj];
+                            C_arr[c_index] += A_arr[a_row_offset + kk] * B_trans_arr[b_row_offset + kk];
                         }
                     }
                 }
             }
         }
     }
+    // Free the helper B transpose Matrix
+    free(B_trans_arr);
 }
 
