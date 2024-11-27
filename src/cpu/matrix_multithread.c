@@ -292,16 +292,16 @@ void matrix_multithread_mult(Matrix* A, Matrix* B, Matrix* C, size_t block_size,
         if (pthread_join(threads[i], NULL) != 0) {
             perror("Error: pthread_join failed");
 
-            free(q);
+            queue_free(q);
             pthread_mutex_destroy(&queue_lock);
-            free(C);
+            matrix_free(C);
             return;
         }
     }
 
     // Free allocated memory
-    free(q);
-    free(B_trans);
+    queue_free(q);
+    matrix_free(B_trans);
 
     // Destory the Queue mutex
     pthread_mutex_destroy(&queue_lock);
