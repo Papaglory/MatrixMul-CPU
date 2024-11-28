@@ -50,7 +50,7 @@ dimensions=(50 100 200 500 750 1000 1500 2000)
 BLOCK_SIZE=128
 
 # Number of runs for each (algorithm, dimension) benchmark
-NUM_RUNS=40
+NUM_RUNS=50
 
 # Seed for reproducability when running benchmark
 SEED=42
