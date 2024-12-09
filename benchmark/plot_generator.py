@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
 import seaborn as sns
 from scipy import stats # Perform stat analysis
 
@@ -65,7 +66,7 @@ def create_heatmap_with(x_data, y_data, heat_data, title, x_label, y_label, png_
     # Save
     plt.savefig(png_name)
 
-def create_bar_cpi(data, NUM_RUNS):
+def create_bar_cpi(data, NUM_RUNS, png_name):
 
     # Preprocessing for calculating the confidence interval
     alpha = 1 - 0.05
@@ -123,7 +124,7 @@ def create_bar_cpi(data, NUM_RUNS):
 
     plt.tight_layout()
     # Save
-    plt.savefig("plots/cpi_bar.png")
+    plt.savefig(png_name)
 
 
 def create_graph_execution_time(data, NUM_RUNS, filename):
@@ -168,35 +169,214 @@ def create_graph_execution_time(data, NUM_RUNS, filename):
     plt.tight_layout()
     plt.savefig(filename)
 
+# Two sided welchs t test function
+def welchs_t_test_two_sided(xbar, ybar, s1, s2, n, m, delta0=0):
+
+    # Calculate the numerator of the t-statistic
+    num = xbar - ybar - delta0
+
+    # Calculate the denominator of the t-statistic
+    den = math.sqrt(s1**2 / n + s2**2 / m)
+
+    # Calculate the t-statistic
+    t_stat = num / den
+
+    # Calculate degrees of freedom
+    df_num = (s1**2 / n + s2**2 / m)**2
+    df_den = ((s1**2 / n)**2) / (n - 1) + ((s2**2 / m)**2) / (m - 1)
+    df = df_num / df_den
+
+    # Calculate the two-tailed p-value
+    p_value = 2 * stats.t.sf(abs(t_stat), df)
+
+    return t_stat, p_value
+
+def perform_runtime_ttest_two_sided(
+    data,
+    group_col,            # Column name for the grouping variable ('Block Size')
+    group_values,          # Two values of the grouping variable to compare ([64, 128])
+    factor_col,            # Column name of the factor you iterate over ('Dimension')
+    metric_col,            # Column name for the metric ('Average Execution Time (seconds)')
+    variance_col,          # Column name for the variance of the metric ('Execution Time Variance')
+    num_runs,              # Number of runs for each group (NUM_RUNS)
+    png_file,              # Filename for the plot
+    results_name,          # Filename for the CSV results
+    alpha=0.05,            # Significance level
+    reject_label_template="Reject H0: {better_group} is better",  # Template for rejection label
+    fail_reject_label="Fail to Reject H0",
+    plot_title="Two-Sided Log-scaled P-values for {metric} across {factor}",
+    plot_xlabel="{factor}",
+    plot_ylabel="-log10(P-value)"
+):
+    # Extract data subsets for the two groups
+    data_g1 = data[data[group_col] == group_values[0]]
+    data_g2 = data[data[group_col] == group_values[1]]
+
+    # Get all factor values
+    factors = data[factor_col].unique()
+
+    # Calculate Bonferroni correction for alpha
+    num_tests = len(factors)
+    adjusted_alpha = alpha / num_tests
+
+    results = []
+
+    for f in factors:
+        # Filter data for the current factor level
+        data_g1_filtered = data_g1.loc[data_g1[factor_col] == f]
+        data_g2_filtered = data_g2.loc[data_g2[factor_col] == f]
+
+        # Ensure there is data for both groups for this factor
+        if data_g1_filtered.empty or data_g2_filtered.empty:
+            continue
+
+        # Extract the means and variances
+        xbar = data_g1_filtered[metric_col].iloc[0]
+        ybar = data_g2_filtered[metric_col].iloc[0]
+        s1_squared = data_g1_filtered[variance_col].iloc[0]
+        s2_squared = data_g2_filtered[variance_col].iloc[0]
+        s1 = np.sqrt(s1_squared)
+        s2 = np.sqrt(s2_squared)
+        n = num_runs
+        m = num_runs
+
+        # Perform two-sided Welchs t-test
+        t_stat, p_value = welchs_t_test_two_sided(xbar, ybar, s1, s2, n, m)
+
+        # Determine decision
+        if p_value < adjusted_alpha:
+            # Identify which group is better (lower metric means better)
+            better_group_value = group_values[0] if xbar < ybar else group_values[1]
+            decision = reject_label_template.format(better_group=better_group_value)
+        else:
+            decision = fail_reject_label
+
+        # Store results
+        results.append({
+            factor_col: f,
+            f"{group_values[0]} Mean": xbar,
+            f"{group_values[1]} Mean": ybar,
+            't-statistic': t_stat,
+            'p-value': p_value,
+            'Adjusted Alpha': adjusted_alpha,
+            'Decision': decision
+        })
+
+    # Convert results to DataFrame
+    results_df = pd.DataFrame(results)
+
+    # Display the results
+    print(results_df)
+
+    # Save the results to a CSV file
+    results_df.to_csv(results_name, index=False)
+
+    # Plotting p-values across factors using seaborn
+    plt.figure(figsize=(12, 8))
+    sns.barplot(data=results_df, x=factor_col, y=-np.log10(results_df['p-value']), hue='Decision', dodge=False)
+    plt.axhline(y=-np.log10(adjusted_alpha), color='red', linestyle='--', label=f'Adjusted Alpha = {adjusted_alpha:.5f}')
+    plt.title(plot_title.format(metric=metric_col, factor=factor_col))
+    plt.xlabel(plot_xlabel.format(metric=metric_col, factor=factor_col))
+    plt.ylabel(plot_ylabel.format(metric=metric_col, factor=factor_col))
+    plt.legend()
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+    plt.savefig(png_file)
+
 def main():
 
     # The number of runs used for each datapoint (row) in the data during benchmark
     NUM_RUNS = 50;
 
+    # ----- 3AVX: FIND OPTIMAL BLOCK SIZE----
+    block_size_data_3avx = pd.read_csv('data/MULTITHREAD_3AVX_block_size_results.csv')
+
+    # Create block size and execution time heatmap
+    create_heatmap_with(block_size_data_3avx['Block Size'], block_size_data_3avx['Dimension'], block_size_data_3avx['Average Execution Time (seconds)'],
+                        "Average Execution Time (seconds)", "Block Size", "Dimension", "plots/MULTITHREAD_3AVX_block_size_heatmap.png")
+
+    # Perform welchs test for 3AVX
+    #perform_runtime_ttest_two_sided(block_size_data_3avx, NUM_RUNS, "plots/MULTITHREAD_3AVX_block_size_welch.png", "data/MULTITHREAD_3AVX_runtime_t_test_two_sided_results.csv", alpha=0.05)
+    perform_runtime_ttest_two_sided(
+        data=block_size_data_3avx,
+        group_col='Block Size',
+        group_values=[64, 128],
+        factor_col='Dimension',
+        metric_col='Average Execution Time (seconds)',
+        variance_col='Execution Time Variance',
+        num_runs=NUM_RUNS,
+        png_file="plots/MULTITHREAD_3AVX_block_size_welch.png",
+        results_name="data/MULTITHREAD_3AVX_runtime_t_test_two_sided_results.csv",
+        alpha=0.05,
+        reject_label_template="Reject H0: {better_group} block size is better",
+        fail_reject_label="Fail to Reject H0",
+        plot_title="Two-Sided Log-scaled P-values for {metric} across {factor}",
+        plot_xlabel="{factor}",
+        plot_ylabel="-log10(P-value)"
+    )
+
+    # ----- 9AVX: FIND OPTIMAL BLOCK SIZE----
+    block_size_data_9avx = pd.read_csv('data/MULTITHREAD_9AVX_block_size_results.csv')
+
+    # Create block size and execution time heatmap
+    create_heatmap_with(block_size_data_9avx['Block Size'], block_size_data_9avx['Dimension'], block_size_data_9avx['Average Execution Time (seconds)'],
+                        "Average Execution Time (seconds)", "Block Size", "Dimension", "plots/MULTITHREAD_9AVX_block_size_heatmap.png")
+
+    # Perform welchs test for 9AVX
+    perform_runtime_ttest_two_sided(
+        data=block_size_data_9avx,
+        group_col='Block Size',
+        group_values=[64, 128],
+        factor_col='Dimension',
+        metric_col='Average Execution Time (seconds)',
+        variance_col='Execution Time Variance',
+        num_runs=NUM_RUNS,
+        png_file="plots/MULTITHREAD_9AVX_block_size_welch.png",
+        results_name="data/MULTITHREAD_9AVX_runtime_t_test_two_sided_results.csv",
+        alpha=0.05,
+        reject_label_template="Reject H0: {better_group} block size is better",
+        fail_reject_label="Fail to Reject H0",
+        plot_title="Two-Sided Log-scaled P-values for {metric} across {factor}",
+        plot_xlabel="{factor}",
+        plot_ylabel="-log10(P-value)"
+    )
+
+    # ----- ALL ALGORITHMS: CREATE PLOTS FOR BENCHMARK RESULTS
     # Load benchmark data
     data = pd.read_csv('data/benchmark_results.csv')
 
-    # Load block size data of state-of-the-art algorithm: MULTITHREAD_9AVX
-    block_size_data = pd.read_csv('data/block_size_results.csv')
+    # Perform test between competing algorithms
+    perform_runtime_ttest_two_sided(
+        data=data,
+        group_col='Algorithm',
+        group_values=['MULTITHREAD_3AVX', 'MULTITHREAD_9AVX'],
+        factor_col='Dimension',
+        metric_col='Average Execution Time (seconds)',
+        variance_col='Execution Time Variance',
+        num_runs=NUM_RUNS,
+        png_file="plots/competing_algorithms_welch.png",
+        results_name="data/competing_algorithms_runtime_t_test_two_sided_results.csv",
+        alpha=0.05,
+        reject_label_template="Reject H0: {better_group} algorithm is better",
+        fail_reject_label="Fail to Reject H0",
+        plot_title="Two-Sided Log-scaled P-values for {metric} across {factor}",
+        plot_xlabel="{factor}",
+        plot_ylabel="-log10(P-value)"
+    )
 
     # Create cache-miss-rate heatmap
     create_heatmap_with(data['Algorithm'], data['Dimension'], data['Cache-Miss-Rate'],
-                        "Cache-Miss-Rate", "Algorithm", "Dimension", "plots/cache_miss_heatmap.png")
+                        "Cache-Miss-Rate", "Algorithm", "Dimension", "plots/cache_miss_rate_heatmap.png")
 
     create_heatmap_with(data['Algorithm'], data['Dimension'], data['Cache-Miss-Rate Variance'],
-                        "Cache-Miss-Rate", "Algorithm", "Dimension", "plots/cache_miss_heatmap.png")
-
+                        "Cache-Miss-Rate", "Algorithm", "Dimension", "plots/cache_miss_rate_variance_heatmap.png")
 
     # Create average execution time (seconds) heatmap
     create_heatmap_with(data['Algorithm'], data['Dimension'], data['Average Execution Time (seconds)'],
                         "Average Execution Time (seconds)", "Algorithm", "Dimension", "plots/execution_time_heatmap.png")
 
-    # Create block size and execution time heatmap
-    create_heatmap_with(block_size_data['Block Size'], block_size_data['Dimension'], block_size_data['Average Execution Time (seconds)'],
-                        "Average Execution Time (seconds)", "Block Size", "Dimension", "plots/block_size_heatmap.png")
-
     # Create and save bar diagram for CPI
-    create_bar_cpi(data, NUM_RUNS)
+    create_bar_cpi(data, NUM_RUNS, "plots/cpi_bar.png")
 
     # Create and save graph plot for execution time
     create_graph_execution_time(data, NUM_RUNS, "plots/execution_time_plot.png")
@@ -207,8 +387,9 @@ def main():
     for algo in excluded_algos:
         filtered_data = filtered_data[filtered_data['Algorithm'] != algo]
 
-    # Create and save graph plot for execution time
-    create_graph_execution_time(filtered_data, NUM_RUNS, "plots/execution_time_plot_TODO.png")
+    # Create average execution time (seconds) heatmap for competing algorithms
+    create_heatmap_with(filtered_data['Algorithm'], filtered_data['Dimension'], filtered_data['Average Execution Time (seconds)'],
+                        "Average Execution Time (seconds)", "Algorithm", "Dimension", "plots/competing_algorithms_execution_time_heatmap.png")
 
 # Execute main if this file is called as a script
 if __name__ == "__main__":

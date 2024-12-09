@@ -19,8 +19,8 @@ int main() {
     // Matrix generation parameters
     const double VALUES_MIN = -1e+6;
     const double VALUES_MAX = 1e+6;
-    const size_t DIMENSIONS_MIN = 1000;
-    const size_t DIMENSIONS_MAX = 1000;
+    const size_t DIMENSIONS_MIN = 3000;
+    const size_t DIMENSIONS_MAX = 3000;
     const int seed = 42;
 
     // Set the seed for reproducibility
