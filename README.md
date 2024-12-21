@@ -1,7 +1,7 @@
 # MatrixMul-CPU
 
 ## Preview
-<img src="benchmark/plots/execution_time_plot.png" alt="Alt Text" width="330" height="400" />
+<img src="benchmark/plots/execution_time_plot.png" alt="Alt Text"/>
 
 ## Further Information
 
